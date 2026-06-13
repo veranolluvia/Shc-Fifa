@@ -60,7 +60,6 @@
   }
   .status.open{background:rgba(61,220,151,0.15); color:var(--green);}
   .status.locked{background:rgba(255,107,107,0.15); color:var(--red);}
-  .status.submitted{background:rgba(77,171,247,0.15); color:var(--blue);}
   .detail{display:none; margin-top:10px;}
   .detail.show{display:block;}
   .info-box{
@@ -71,8 +70,10 @@
   .pred-row{display:flex; align-items:center; gap:10px; justify-content:center; margin:10px 0;}
   .pred-row input{
     width:54px; height:48px; text-align:center; font-size:20px; font-weight:700;
-    background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:10px;
+    background:var(--bg); color:var(--text); border:2px solid var(--line); border-radius:10px;
+    transition:border-color 0.2s;
   }
+  .pred-row input.filled{ border-color:var(--accent); }
   .pred-row input:disabled{opacity:0.6;}
   .vs{font-size:13px; color:var(--muted);}
   .pred-team{font-size:12px; text-align:center; color:var(--muted); width:54px;}
@@ -128,6 +129,23 @@
     pointer-events:none; z-index:50;
   }
   .toast.show{opacity:1;}
+  .countdown{
+    font-weight:800; animation: fifa-blink 3s ease-in-out infinite, fifa-color 8s linear infinite;
+  }
+  @keyframes fifa-blink{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.3; }
+  }
+  @keyframes fifa-color{
+    0%{ color:#00d97e; }
+    33%{ color:#4dabf7; }
+    66%{ color:#ff5e3a; }
+    100%{ color:#00d97e; }
+  }
+  .lb-toggle{
+    width:100%; margin:0 0 14px; background:var(--card2); color:var(--text);
+    border:1px solid var(--line); border-radius:12px; padding:12px; font-size:14px; font-weight:700;
+  }
 </style>
 </head>
 <body>
@@ -153,6 +171,8 @@
     <div class="label" id="windowLabel"></div>
     <button id="nextBtn" onclick="changeWindow(1)">&#8594;</button>
   </div>
+
+  <button class="lb-toggle" onclick="surpriseMe()">🎲 Surprise Me</button>
 
   <div id="matchdays"></div>
 
@@ -339,14 +359,17 @@ let userName = "";
 let windowStart = 1; // matchday index that starts the visible 2-day window
 const TOTAL_MD = 17;
 
-// ---------- STORAGE SHIM ----------
-// window.storage is only available inside the Claude artifact runtime.
-// When opened as a plain file (e.g. iOS Safari, Android browser, emailed file),
-// fall back to an in-memory store so the app never throws and keeps working.
-const memoryStore = {};
-const storage = (window.storage && typeof window.storage.get === 'function') ? window.storage : {
-  async get(key){ return Object.prototype.hasOwnProperty.call(memoryStore, key) ? {key, value: memoryStore[key]} : null; },
-  async set(key, value){ memoryStore[key] = value; return {key, value}; }
+// ---------- STORAGE ----------
+// Hosted version: use localStorage so predictions persist on each user's device/browser.
+const storage = {
+  async get(key){
+    const v = localStorage.getItem(key);
+    return v===null ? null : {key, value: v};
+  },
+  async set(key, value){
+    localStorage.setItem(key, value);
+    return {key, value};
+  }
 };
 async function loadState(){
   try{
@@ -372,8 +395,6 @@ async function saveName(){
 function nowUTC(){ return new Date(); }
 function matchDateTime(m){ return new Date(m.date + "T" + m.time + ":00Z"); }
 function isLocked(m){
-  const p = predictions[m.id];
-  if(p && p.submitted) return true;
   return nowUTC() >= matchDateTime(m);
 }
 function fmtTime(m){
@@ -428,9 +449,8 @@ function render(){
     getMatchesForMD(md).forEach(m=>{
       const locked = isLocked(m);
       const p = predictions[m.id] || {};
-      const submitted = p.submitted;
-      let statusClass = locked ? (submitted ? 'submitted' : 'locked') : 'open';
-      let statusText = submitted ? 'Locked: Sent' : (locked ? 'Locked' : 'Open');
+      let statusClass = locked ? 'locked' : 'open';
+      let statusText = locked ? 'Locked' : 'Open';
 
       const stats = getStats(m);
 
@@ -449,12 +469,13 @@ function render(){
             <div><b>Venue:</b> ${stats.venue}</div>
             <div style="margin-top:4px;"><b>Head-to-head:</b> ${stats.h2h}</div>
             <div style="margin-top:4px;"><b>Talking point:</b> ${stats.fact}${m.note ? ' ('+m.note+')' : ''}</div>
+            ${openFactCache[m.id] ? `<div style="margin-top:4px;">${openFactCache[m.id]}</div>` : ''}
           </div>
           <div class="pred-row" onclick="event.stopPropagation()">
             <div class="pred-team">${m.home}</div>
-            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20" id="home-${m.id}" value="${p.home!==undefined?p.home:''}" ${locked?'disabled':''} onchange="updatePred(${m.id})">
+            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20" id="home-${m.id}" class="${p.home!==undefined?'filled':''}" value="${p.home!==undefined?p.home:''}" ${locked?'disabled':''} oninput="markFilled(${m.id})" onchange="updatePred(${m.id})">
             <div class="vs">:</div>
-            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20" id="away-${m.id}" value="${p.away!==undefined?p.away:''}" ${locked?'disabled':''} onchange="updatePred(${m.id})">
+            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20" id="away-${m.id}" class="${p.away!==undefined?'filled':''}" value="${p.away!==undefined?p.away:''}" ${locked?'disabled':''} oninput="markFilled(${m.id})" onchange="updatePred(${m.id})">
             <div class="pred-team">${m.away}</div>
           </div>
           <div class="saved-note" id="note-${m.id}"></div>
@@ -466,9 +487,62 @@ function render(){
   });
 }
 
+// Generic rotating one-liners shown alongside the match-specific talking point
+const rotatingFacts = [
+  "Fun fact: the World Cup trophy is solid gold and weighs about 6.1 kg.",
+  "Fun fact: the first World Cup in 1930 had only 13 teams.",
+  "Fun fact: Brazil is the only team to play in every World Cup since 1930.",
+  "Fun fact: the fastest World Cup goal ever was scored in 11 seconds.",
+  "Fun fact: Germany has reached the most World Cup finals (8).",
+  "Fun fact: the World Cup was stolen in 1966 and found by a dog named Pickles.",
+  "Fun fact: 2026 is the first World Cup with 48 teams.",
+  "Fun fact: penalty shootouts were introduced to World Cups in 1982.",
+  "Fun fact: the average World Cup match has about 3 goals combined.",
+  "Fun fact: red cards weren't used at World Cups until 1970.",
+  "Fun fact: a World Cup ball travels roughly 8-10km during a match.",
+  "Fun fact: Mexico, USA & Canada co-hosting is a first in World Cup history.",
+  "Fun fact: extra time was introduced from the very first World Cup in 1930.",
+  "Fun fact: the 'Golden Boot' goes to the tournament's top scorer.",
+  "Fun fact: some players run over 10km in a single World Cup match."
+];
+function randomRotatingFact(){
+  return rotatingFacts[Math.floor(Math.random()*rotatingFacts.length)];
+}
+let openFactCache = {};
+
 function toggleDetail(id){
-  if(openDetails.has(id)) openDetails.delete(id);
-  else openDetails.add(id);
+  if(openDetails.has(id)){
+    openDetails.delete(id);
+  } else {
+    openDetails.add(id);
+    openFactCache[id] = randomRotatingFact();
+  }
+  render();
+}
+
+function markFilled(id){
+  const h = document.getElementById('home-'+id);
+  const a = document.getElementById('away-'+id);
+  h.classList.toggle('filled', h.value !== '');
+  a.classList.toggle('filled', a.value !== '');
+}
+
+function surpriseMe(){
+  const ms = visibleMatches().filter(m=>!isLocked(m) && predictions[m.id]===undefined);
+  if(!ms.length){
+    showToast("Nothing left to surprise you with here!");
+    return;
+  }
+  // weighted plausible scoreline pool (mostly low-scoring, occasional thriller)
+  const pool = [
+    [1,0],[0,0],[1,1],[2,0],[2,1],[0,1],[1,2],[2,2],[3,1],[1,3],[0,2],[3,0],[3,2],[2,3],[4,1]
+  ];
+  ms.forEach(m=>{
+    const [h,a] = pool[Math.floor(Math.random()*pool.length)];
+    predictions[m.id] = {home:h, away:a};
+  });
+  savePredictions();
+  showToast("🎲 Surprise predictions added!");
   render();
 }
 
@@ -523,6 +597,26 @@ function generateExport(){
   document.getElementById('exportText').value = lines.join("\n");
 }
 
+const closingLines = [
+  "May your predictions be sharper than VAR replays.",
+  "Remember: it's not gambling if you're confident.",
+  "Place your bets... wait, wrong app. Good luck!",
+  "If this goes wrong, blame the ref, not the predictor.",
+  "Confidence level: Group Stage Pundit.",
+  "Future Nostradamus reporting for duty.",
+  "May the odds be ever in your favour.",
+  "Predictions locked tighter than Italy's defense (allegedly).",
+  "Somewhere, a bookmaker just felt a chill.",
+  "This message is 100% accurate, 50% of the time.",
+  "Crystal ball says: trust the process.",
+  "Loading delusions of grandeur... done.",
+  "If wrong, this message will self-destruct (it won't, but emotionally).",
+  "Certified by the Ministry of Wishful Thinking.",
+  "Stonks only go up, and so do my predictions."
+];
+function randomClosingLine(){
+  return closingLines[Math.floor(Math.random()*closingLines.length)];
+}
 async function confirmExport(){
   if(!userName || !userName.trim()){
     const nameInput = document.getElementById('userName');
@@ -537,14 +631,6 @@ async function confirmExport(){
   }
   const ms = visibleMatches();
   const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
-  ms.forEach(m=>{
-    const p = predictions[m.id];
-    if(p && p.home!==undefined && p.away!==undefined && !p.submitted){
-      p.submitted = true;
-      p.submittedAt = ts;
-    }
-  });
-  await savePredictions();
 
   // regenerate export text with confirmation timestamp
   const name = userName || "Player";
@@ -552,7 +638,7 @@ async function confirmExport(){
   lines.push(`*World Cup Predictions - ${name}*`);
   lines.push(`_Confirmed at: ${ts}_`);
   let currentMd = null;
-  ms.forEach(m=>{
+  ms.filter(m=>!isLocked(m)).forEach(m=>{
     if(m.md !== currentMd){
       currentMd = m.md;
       lines.push("");
@@ -562,16 +648,26 @@ async function confirmExport(){
     const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
     lines.push(`${m.home} vs ${m.away}: ${predStr}`);
   });
-  const text = lines.join("\n") + "\n\nThankyou Varun. This cool";
+  const text = lines.join("\n") + "\n\n" + randomClosingLine();
   document.getElementById('exportText').value = text;
 
   // try clipboard
+  let copied = false;
   try{
     await navigator.clipboard.writeText(text);
-    showToast("Copied to clipboard! Predictions locked.");
+    copied = true;
   }catch(e){
-    showToast("Predictions locked. Copy the text manually.");
+    try{
+      const ta = document.getElementById('exportText');
+      ta.removeAttribute('readonly');
+      ta.focus();
+      ta.select();
+      copied = document.execCommand('copy');
+      ta.setAttribute('readonly', 'readonly');
+      ta.blur();
+    }catch(e2){ copied = false; }
   }
+  showToast(copied ? "Copied to clipboard!" : "Tap and hold the box to copy.");
   render();
 }
 
@@ -588,11 +684,44 @@ function updateClock(){
   const hh = String(now.getUTCHours()).padStart(2,'0');
   const mm = String(now.getUTCMinutes()).padStart(2,'0');
   const ss = String(now.getUTCSeconds()).padStart(2,'0');
-  document.getElementById('clock').textContent = `UTC time now: ${hh}:${mm}:${ss}`;
+  let clockText = `UTC time now: ${hh}:${mm}:${ss}`;
+
+  const next = matches.find(m=>matchDateTime(m) > now);
+  if(next){
+    const diff = matchDateTime(next) - now;
+    const totalMin = Math.floor(diff/60000);
+    const dH = Math.floor(totalMin/60);
+    const dM = totalMin % 60;
+    const dSec = Math.floor((diff%60000)/1000);
+    let countdown;
+    if(dH > 0) countdown = `${dH}h ${dM}m`;
+    else if(dM > 0) countdown = `${dM}m ${dSec}s`;
+    else countdown = `${dSec}s`;
+    clockText += ` · <span class="countdown">${next.home} vs ${next.away} kicks off in ${countdown}</span>`;
+  }
+  document.getElementById('clock').innerHTML = clockText;
   // re-render lock states periodically without losing scroll too much
 }
 setInterval(()=>{ updateClock(); }, 1000);
 setInterval(()=>{ render(); }, 15000);
+
+// ---------- SWIPE GESTURES ----------
+(function initSwipe(){
+  const el = document.getElementById('matchdays');
+  let startX = 0, startY = 0;
+  el.addEventListener('touchstart', e=>{
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive:true});
+  el.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)*1.5){
+      if(dx < 0) changeWindow(1);   // swipe left -> next
+      else changeWindow(-1);        // swipe right -> previous
+    }
+  }, {passive:true});
+})();
 
 // ---------- ERROR VISIBILITY ----------
 window.onerror = function(msg, src, line){
