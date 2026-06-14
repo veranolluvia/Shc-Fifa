@@ -189,7 +189,7 @@
 
 <script>
 // ---------- DATA ----------
-// All times are UTC. Matchday groups correspond to FIFA-style "match day" numbering by date.
+// Source schedule times are labeled as listed (CEST, UTC+2). matchDateTime() converts to true UTC.
 const matches = [
   {id:1, date:"2026-06-11", time:"21:00", group:"A", home:"Mexico", away:"South Africa", md:1},
 
@@ -392,17 +392,23 @@ async function saveName(){
 }
 
 // ---------- TIME HELPERS ----------
+// Source schedule times are in CEST (UTC+2). Convert to true UTC instants by subtracting 2 hours.
 function nowUTC(){ return new Date(); }
-function matchDateTime(m){ return new Date(m.date + "T" + m.time + ":00Z"); }
+function matchDateTime(m){
+  const utcMs = Date.parse(m.date + "T" + m.time + ":00Z") - (2 * 60 * 60 * 1000);
+  return new Date(utcMs);
+}
 function isLocked(m){
   return nowUTC() >= matchDateTime(m);
 }
 function fmtTime(m){
   const d = matchDateTime(m);
-  const hh = String(d.getUTCHours()).padStart(2,'0');
-  const mm = String(d.getUTCMinutes()).padStart(2,'0');
-  const day = d.toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short', timeZone:'UTC'});
-  return `${day}, ${hh}:${mm} UTC`;
+  // Display in the viewer's local timezone
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  const day = d.toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short'});
+  const tzName = Intl.DateTimeFormat(undefined, {timeZoneName:'short'}).formatToParts(d).find(p=>p.type==='timeZoneName').value;
+  return `${day}, ${hh}:${mm} ${tzName}`;
 }
 
 // ---------- MATCHDAY DETECTION ----------
@@ -681,10 +687,10 @@ function showToast(msg){
 // ---------- CLOCK ----------
 function updateClock(){
   const now = new Date();
-  const hh = String(now.getUTCHours()).padStart(2,'0');
-  const mm = String(now.getUTCMinutes()).padStart(2,'0');
-  const ss = String(now.getUTCSeconds()).padStart(2,'0');
-  let clockText = `UTC time now: ${hh}:${mm}:${ss}`;
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  let clockText = `Local time now: ${hh}:${mm}:${ss}`;
 
   const next = matches.find(m=>matchDateTime(m) > now);
   if(next){
