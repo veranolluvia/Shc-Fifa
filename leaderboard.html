@@ -7,9 +7,10 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <style>
   :root{
-    --bg:#071a2b; --card:#0f2940; --card2:#163a57; --line:#2d5577;
-    --text:#f2f7fb; --muted:#a9c4dc; --accent:#00d97e; --accent2:#ff5e3a;
-    --gold:#ffd166; --silver:#cfd8e3; --bronze:#e0a96d;
+    --bg:#050f1d; --card:#102d47; --card2:#1a4368; --line:#2d6594;
+    --text:#ffffff; --muted:#9fc4e8; --accent:#00ff9d; --accent2:#ff4d4d;
+    --gold:#ffd700; --silver:#e8eef5; --bronze:#ff9f4d;
+    --header-grad: linear-gradient(135deg, #003366 0%, #00d97e 100%);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   body{
@@ -18,35 +19,46 @@
   }
   .wrap{max-width:480px; margin:0 auto; padding:12px;}
   header{
-    text-align:center; padding:16px 4px 8px;
+    text-align:center; padding:20px 12px; margin:8px 0 16px;
+    background:var(--header-grad); border-radius:16px;
+    border:2px solid var(--accent); box-shadow:0 0 24px rgba(0,255,157,0.35);
   }
-  h1{font-size:20px; margin:0; font-weight:800;}
-  .subtitle{font-size:12px; color:var(--muted); margin-top:4px; font-style:italic;}
+  h1{font-size:23px; margin:0; font-weight:900; letter-spacing:0.5px;
+     text-shadow:0 2px 8px rgba(0,0,0,0.4);}
+  .subtitle{font-size:12.5px; color:#dff5ea; margin-top:6px; font-style:italic; font-weight:600;}
   .refresh-row{
     display:flex; justify-content:center; margin:10px 0 16px;
   }
   .refresh-row button{
-    background:var(--card2); color:var(--text); border:1px solid var(--line);
-    border-radius:10px; padding:8px 16px; font-size:13px; font-weight:600;
+    background:var(--accent); color:var(--bg); border:none;
+    border-radius:12px; padding:10px 22px; font-size:13px; font-weight:800;
+    box-shadow:0 2px 10px rgba(0,255,157,0.4);
   }
   .lb-table{
     width:100%; border-collapse:collapse; background:var(--card);
-    border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    border:2px solid var(--accent); border-radius:14px; overflow:hidden;
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
   }
   .lb-table th, .lb-table td{
-    padding:6px 2px; text-align:center; border-bottom:1px solid var(--line); font-size:11px;
+    padding:8px 2px; text-align:center; border-bottom:1px solid var(--line); font-size:11px;
   }
   .lb-table th{
-    background:var(--card2); color:var(--muted); font-size:9px;
-    text-transform:uppercase; letter-spacing:0.2px; line-height:1.2;
+    background:var(--header-grad); color:#ffffff; font-size:9.5px;
+    text-transform:uppercase; letter-spacing:0.3px; line-height:1.3; font-weight:800;
+    padding:10px 2px;
   }
-  .lb-table td.name{ text-align:left; font-weight:700; font-size:12px; }
-  .lb-table td.points{ font-weight:800; font-size:13px; }
-  .rank-cell{ font-weight:800; }
-  .rank-1{ color:var(--gold); }
+  .lb-table tbody tr:nth-child(odd){ background:rgba(255,255,255,0.03); }
+  .lb-table tbody tr:hover{ background:rgba(0,255,157,0.08); }
+  .lb-table td.name{ text-align:left; font-weight:800; font-size:12.5px; padding-left:8px; }
+  .lb-table td.points{ font-weight:900; font-size:14px; }
+  .rank-cell{ font-weight:900; font-size:13px; }
+  .rank-1{ color:var(--gold); text-shadow:0 0 8px rgba(255,215,0,0.6); }
   .rank-2{ color:var(--silver); }
   .rank-3{ color:var(--bronze); }
-  .pos{ color:var(--green, var(--accent)); }
+  .lb-table tbody tr:nth-child(1){ background:rgba(255,215,0,0.12); }
+  .lb-table tbody tr:nth-child(2){ background:rgba(232,238,245,0.08); }
+  .lb-table tbody tr:nth-child(3){ background:rgba(255,159,77,0.10); }
+  .pos{ color:var(--accent); }
   .neg{ color:var(--accent2); }
   .status{
     text-align:center; font-size:12px; color:var(--muted); margin-top:14px; min-height:16px;
@@ -56,46 +68,51 @@
   }
   .legend{
     background:var(--card); border:1px solid var(--line); border-radius:12px;
-    padding:10px 14px; margin-top:14px; font-size:11.5px; color:var(--muted); line-height:1.6;
+    padding:12px 14px; margin-top:14px; font-size:11.5px; color:var(--muted); line-height:1.7;
   }
-  .legend b{ color:var(--text); }
-  .legend .pos{ color:var(--accent); font-weight:700; }
-  .legend .neu{ color:#4dabf7; font-weight:700; }
-  .legend .neg{ color:var(--accent2); font-weight:700; }
-  .move{ font-size:11px; margin-left:4px; }
+  .legend b{ color:var(--accent); font-size:12.5px; }
+  .legend .pos{ color:var(--accent); font-weight:800; }
+  .legend .neu{ color:#4dabf7; font-weight:800; }
+  .legend .neg{ color:var(--accent2); font-weight:800; }
+  .move{ font-size:11px; margin-left:3px; font-weight:900; }
   .move-up{ color:var(--accent); }
   .move-down{ color:var(--accent2); }
   .move-same{ color:var(--muted); }
   .lastresult{
-    background:var(--card); border:1px solid var(--line); border-radius:12px;
-    padding:12px 14px; margin-bottom:14px; text-align:center;
+    background:var(--header-grad); border:2px solid var(--accent); border-radius:16px;
+    padding:16px 14px; margin-bottom:14px; text-align:center;
+    box-shadow:0 0 20px rgba(0,255,157,0.25);
   }
   .lastresult .lr-title{
-    font-size:12px; font-weight:700; color:var(--accent); margin-bottom:8px;
-    text-transform:uppercase; letter-spacing:0.5px;
+    font-size:12px; font-weight:900; color:#ffffff; margin-bottom:10px;
+    text-transform:uppercase; letter-spacing:1px; text-shadow:0 1px 4px rgba(0,0,0,0.3);
   }
   .lastresult .lr-score{
-    display:flex; align-items:center; justify-content:center; gap:12px; font-size:18px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; gap:14px; font-size:22px; font-weight:900;
+    color:#ffffff; text-shadow:0 2px 6px rgba(0,0,0,0.3);
   }
-  .lastresult .lr-team{ display:flex; flex-direction:column; align-items:center; gap:4px; font-size:13px; font-weight:600; }
-  .lastresult .flag{ font-size:28px; }
+  .lastresult .lr-team{ display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:800; color:#ffffff; }
+  .lastresult .flag{ font-size:32px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
   .tidbits{
     display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:14px;
   }
   .tidbit{
-    background:var(--card); border:1px solid var(--line); border-radius:12px;
-    padding:10px 6px; text-align:center;
+    background:var(--card); border:2px solid var(--line); border-radius:12px;
+    padding:12px 6px; text-align:center; transition:border-color 0.2s;
   }
-  .tidbit .tb-label{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px; }
-  .tidbit .tb-name{ font-size:13px; font-weight:800; color:var(--text); }
-  .tidbit .tb-sub{ font-size:10.5px; color:var(--accent); margin-top:2px; }
+  .tidbit:nth-child(1){ border-color:var(--gold); box-shadow:0 0 12px rgba(255,215,0,0.2); }
+  .tidbit:nth-child(2){ border-color:var(--accent2); box-shadow:0 0 12px rgba(255,77,77,0.2); }
+  .tidbit:nth-child(3){ border-color:var(--muted); }
+  .tidbit .tb-label{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; font-weight:700; }
+  .tidbit .tb-name{ font-size:14px; font-weight:900; color:var(--text); }
+  .tidbit .tb-sub{ font-size:10.5px; color:var(--accent); margin-top:4px; font-weight:700; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>🏆 SHC-1999-n Fifa 2026</h1>
-    <div class="subtitle">Trust in God and do the right</div>
+    <h1>🏆 SHC-1999-n FIFA 2026</h1>
+    <div class="subtitle">⚡ Trust in God and do the right ⚡</div>
   </header>
 
   <div id="lastResultBox"></div>
@@ -122,6 +139,8 @@
 </div>
 
 <script>
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
+
 const FLAGS = {
   "Mexico":"🇲🇽","South Africa":"🇿🇦","South Korea":"🇰🇷","Czechia":"🇨🇿","Canada":"🇨🇦",
   "Bosnia & Herzegovina":"🇧🇦","Bosnia and Herzegovina":"🇧🇦","USA":"🇺🇸","United States":"🇺🇸","Paraguay":"🇵🇾",
@@ -150,8 +169,8 @@ function renderLastResult(lastResult){
 }
 
 const TIDBIT_SUBS = {
-  mostlyCorrect: ["The Oracle 🔮", "Crystal Ball Certified ✨", "Knows Things 🧠"],
-  mostlyWrong: ["Bold but Brutal 😅", "Confidently Incorrect 🎯", "Chaos Agent 🌀"],
+  mostlyCorrect: ["I know things 🧠"],
+  mostlyWrong: ["Always wrong, never bent 😅"],
   leastPredictions: ["Ghost Mode 👻", "Where Were You? 🕵️", "Phantom Predictor 💨"]
 };
 function pickSub(key){
@@ -163,8 +182,8 @@ function renderTidbits(tidbits){
   const box = document.getElementById('tidbitsBox');
   if(!tidbits){ box.innerHTML = ''; return; }
   const items = [
-    {label:"Mostly Correct", data:tidbits.mostlyCorrect, sub:pickSub('mostlyCorrect')},
-    {label:"Mostly Wrong", data:tidbits.mostlyWrong, sub:pickSub('mostlyWrong')},
+    {label:"The Oracle Award", data:tidbits.mostlyCorrect, sub:pickSub('mostlyCorrect')},
+    {label:"Incorrect & Incorrupt", data:tidbits.mostlyWrong, sub:pickSub('mostlyWrong')},
     {label:"Least Predictions", data:tidbits.leastPredictions, sub:pickSub('leastPredictions')}
   ];
   let html = '<div class="tidbits">';
