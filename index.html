@@ -398,7 +398,13 @@ function matchDateTime(m){
   const utcMs = Date.parse(m.date + "T" + m.time + ":00Z") - (2 * 60 * 60 * 1000);
   return new Date(utcMs);
 }
+// TEMPORARY: while the new shared-sheet feature is being tested on a separate
+// page, lock all matches M11 onward on the live app so people don't submit
+// predictions for upcoming matches before the rollout is ready.
+// Remove this block once testing is complete and the live app is updated.
+var TEMP_LOCK_FROM_MATCH_ID = 11;
 function isLocked(m){
+  if(m.id >= TEMP_LOCK_FROM_MATCH_ID) return true;
   return nowUTC() >= matchDateTime(m);
 }
 function fmtTime(m){
