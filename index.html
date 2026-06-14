@@ -146,6 +146,51 @@
     width:100%; margin:0 0 14px; background:var(--card2); color:var(--text);
     border:1px solid var(--line); border-radius:12px; padding:12px; font-size:14px; font-weight:700;
   }
+  .action-row{
+    display:flex; gap:6px; margin:0 0 14px;
+  }
+  .action-btn{
+    flex:1; background:var(--card2); color:var(--text); border:1px solid var(--line);
+    border-radius:12px; padding:10px 4px; font-size:12px; font-weight:700;
+    text-align:center; display:flex; align-items:center; justify-content:center;
+    white-space:nowrap;
+  }
+  .action-btn:active{ background:var(--line); }
+
+  /* ---------- Action animations overlay ---------- */
+  .anim-overlay{
+    position:fixed; inset:0; z-index:200; display:none;
+    align-items:center; justify-content:center; pointer-events:none;
+    background:rgba(5,15,29,0.35);
+  }
+  .anim-overlay.show{ display:flex; }
+  .anim-dice{
+    font-size:64px; animation: dice-roll 0.7s ease-in-out;
+  }
+  @keyframes dice-roll{
+    0%{ transform:rotate(0deg) scale(0.5); opacity:0; }
+    30%{ transform:rotate(180deg) scale(1.2); opacity:1; }
+    60%{ transform:rotate(380deg) scale(1); }
+    100%{ transform:rotate(720deg) scale(0.8); opacity:0; }
+  }
+  .anim-thread{
+    width:80%; height:4px; background:var(--accent); border-radius:2px;
+    transform-origin:left center; animation: thread-pull 0.7s ease-in-out;
+    box-shadow:0 0 12px var(--accent);
+  }
+  @keyframes thread-pull{
+    0%{ transform:scaleX(0); opacity:0; }
+    50%{ transform:scaleX(1); opacity:1; }
+    100%{ transform:scaleX(1) translateX(20%); opacity:0; }
+  }
+  .anim-trophy{
+    font-size:64px; animation: trophy-spin 0.7s ease-in-out;
+  }
+  @keyframes trophy-spin{
+    0%{ transform:rotateY(0deg) scale(0.6); opacity:0; }
+    40%{ transform:rotateY(360deg) scale(1.2); opacity:1; }
+    100%{ transform:rotateY(720deg) scale(0.8); opacity:0; }
+  }
 </style>
 </head>
 <body>
@@ -172,12 +217,19 @@
     <button id="nextBtn" onclick="changeWindow(1)">&#8594;</button>
   </div>
 
-  <button class="lb-toggle" onclick="surpriseMe()">🎲 Surprise Me</button>
+  <div class="action-row">
+    <button class="action-btn" onclick="playAnimThen('dice', surpriseMe)">🎲 Surprise Me</button>
+    <button class="action-btn" onclick="playAnimThen('thread', loadMyPicks)">🔄 My Picks</button>
+    <button class="action-btn" onclick="playAnimThen('trophy', goToLeaderboard)">🏆 Leaderboard</button>
+  </div>
+  <div id="myPicksBox" style="margin-top:8px;"></div>
+
+  <div class="anim-overlay" id="animOverlay"></div>
 
   <div id="matchdays"></div>
 
   <div class="export-box">
-    <div class="export-header" onclick="confirmExport()">Compose & Copy</div>
+    <div class="export-header" onclick="confirmExport()">Compose & Submit</div>
     <div style="font-size:12px; color:var(--muted); margin-top:8px;">
       Pressing composes your predictions and copies it to be pasted.
     </div>
@@ -398,13 +450,7 @@ function matchDateTime(m){
   const utcMs = Date.parse(m.date + "T" + m.time + ":00Z") - (2 * 60 * 60 * 1000);
   return new Date(utcMs);
 }
-// TEMPORARY: while the new shared-sheet feature is being tested on a separate
-// page, lock all matches M11 onward on the live app so people don't submit
-// predictions for upcoming matches before the rollout is ready.
-// Remove this block once testing is complete and the live app is updated.
-var TEMP_LOCK_FROM_MATCH_ID = 11;
 function isLocked(m){
-  if(m.id >= TEMP_LOCK_FROM_MATCH_ID) return true;
   return nowUTC() >= matchDateTime(m);
 }
 function fmtTime(m){
@@ -539,6 +585,28 @@ function markFilled(id){
   a.classList.toggle('filled', a.value !== '');
 }
 
+// ---------- BUTTON ANIMATIONS ----------
+function playAnimThen(type, action){
+  const overlay = document.getElementById('animOverlay');
+  let inner = '';
+  if(type === 'dice') inner = '<div class="anim-dice">🎲</div>';
+  else if(type === 'thread') inner = '<div class="anim-thread"></div>';
+  else if(type === 'trophy') inner = '<div class="anim-trophy">🏆</div>';
+
+  overlay.innerHTML = inner;
+  overlay.classList.add('show');
+
+  setTimeout(()=>{
+    overlay.classList.remove('show');
+    overlay.innerHTML = '';
+    action();
+  }, 700);
+}
+
+function goToLeaderboard(){
+  window.location.href = 'leaderboard.html';
+}
+
 function surpriseMe(){
   const ms = visibleMatches().filter(m=>!isLocked(m) && predictions[m.id]===undefined);
   if(!ms.length){
@@ -629,6 +697,116 @@ const closingLines = [
 function randomClosingLine(){
   return closingLines[Math.floor(Math.random()*closingLines.length)];
 }
+// ---------- SHARED SHEET SUBMISSION ----------
+const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
+
+function submitPredictionsToSheet(ms, name){
+  ms.filter(m=>!isLocked(m)).forEach(m=>{
+    const p = predictions[m.id];
+    if(!p || p.home===undefined || p.away===undefined) return; // skip unpredicted matches
+    const payload = {
+      name: name,
+      matchId: "M"+m.id,
+      home: m.home,
+      away: m.away,
+      predHome: p.home,
+      predAway: p.away
+    };
+    fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    }).catch(()=>{ /* fail silently, copy still works */ });
+  });
+}
+
+// ---------- MY SUBMITTED PICKS ----------
+async function loadMyPicks(){
+  const box = document.getElementById('myPicksBox');
+  if(!userName || !userName.trim()){
+    box.innerHTML = '<div style="font-size:12px; color:var(--accent2); text-align:center;">Enter your name first.</div>';
+    return;
+  }
+  box.innerHTML = '<div style="font-size:12px; color:var(--muted); text-align:center;">Loading...</div>';
+
+  try{
+    const res = await fetch(SHEET_ENDPOINT + '?type=mypicks&name=' + encodeURIComponent(userName.trim()));
+    const data = await res.json();
+    if(data.status === 'ok'){
+      renderMyPicks(data);
+      return;
+    }
+  }catch(e){
+    // fall through to JSONP
+  }
+
+  try{
+    await loadMyPicksJsonp();
+  }catch(e2){
+    box.innerHTML = '<div style="font-size:12px; color:var(--accent2); text-align:center;">Could not load your picks. Try again.</div>';
+  }
+}
+
+function loadMyPicksJsonp(){
+  return new Promise((resolve, reject)=>{
+    const callbackName = 'mpCallback_' + Date.now();
+    const script = document.createElement('script');
+    let settled = false;
+
+    window[callbackName] = function(data){
+      settled = true;
+      if(data.status === 'ok'){
+        renderMyPicks(data);
+        resolve();
+      } else {
+        reject(new Error('bad response'));
+      }
+      delete window[callbackName];
+      script.remove();
+    };
+
+    script.src = SHEET_ENDPOINT + '?type=mypicks&name=' + encodeURIComponent(userName.trim()) + '&callback=' + callbackName;
+    script.onerror = function(){
+      if(!settled){
+        delete window[callbackName];
+        script.remove();
+        reject(new Error('script load failed'));
+      }
+    };
+    document.body.appendChild(script);
+
+    setTimeout(()=>{
+      if(!settled){
+        delete window[callbackName];
+        script.remove();
+        reject(new Error('timeout'));
+      }
+    }, 8000);
+  });
+}
+
+function renderMyPicks(data){
+  const box = document.getElementById('myPicksBox');
+  if(!data.picks || data.picks.length === 0){
+    box.innerHTML = `<div style="font-size:12px; color:var(--muted); text-align:center;">No submitted picks found for "${data.name}" yet.</div>`;
+    return;
+  }
+  const sorted = data.picks.slice().sort((a,b)=>{
+    const an = parseInt((a.matchId||'').replace(/\D/g,''))||0;
+    const bn = parseInt((b.matchId||'').replace(/\D/g,''))||0;
+    return an - bn;
+  });
+  let html = `<div style="font-size:12px; color:var(--accent); text-align:center; margin-bottom:6px; font-weight:700;">On record for ${data.name}:</div>`;
+  html += '<div style="font-size:12.5px; color:var(--text); line-height:1.8;">';
+  sorted.forEach(p=>{
+    const m = matches.find(mm=>"M"+mm.id === p.matchId);
+    const label = m ? `${p.matchId}: ${m.home} vs ${m.away}` : p.matchId;
+    html += `${label} &rarr; <b>${p.predHome} - ${p.predAway}</b><br>`;
+  });
+  html += '</div>';
+  box.innerHTML = html;
+}
+
 async function confirmExport(){
   if(!userName || !userName.trim()){
     const nameInput = document.getElementById('userName');
@@ -662,6 +840,9 @@ async function confirmExport(){
   });
   const text = lines.join("\n") + "\n\n" + randomClosingLine();
   document.getElementById('exportText').value = text;
+
+  // submit predictions to shared sheet in the background (does not block copy)
+  submitPredictionsToSheet(ms, name);
 
   // try clipboard
   let copied = false;
