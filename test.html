@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHC-1999-n Fifa 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1220'/><text x='50' y='65' font-size='60' text-anchor='middle'>⚽</text></svg>">
+<style>
+  :root{
+    --bg:#071a2b; --card:#0f2940; --card2:#163a57; --line:#2d5577;
+    --text:#f2f7fb; --muted:#a9c4dc; --accent:#00d97e; --accent2:#ff5e3a; --green:#3ddc97;
+    --red:#ff6b6b; --blue:#4dabf7;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); padding-bottom:40px;
+  }
+  .wrap{max-width:480px; margin:0 auto; padding:12px;}
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 4px; position:sticky; top:0; background:var(--bg); z-index:10;
+  }
+  h1{font-size:18px; margin:0; font-weight:700;}
+  .subtitle{font-size:12px; color:var(--muted); margin-top:2px;}
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:8px 0 14px; gap:8px;
+  }
+  .nav button{
+    background:var(--accent); color:var(--bg); border:none;
+    border-radius:12px; padding:12px 18px; font-size:20px; font-weight:800; min-width:50px;
+    box-shadow:0 2px 6px rgba(0,217,126,0.35);
+  }
+  .nav button:disabled{opacity:0.25; box-shadow:none;}
+  .nav .label{font-size:15px; font-weight:700; color:var(--text); text-align:center; flex:1; letter-spacing:0.3px;}
+  .matchday{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    margin-bottom:12px; overflow:hidden;
+  }
+  .md-head{
+    padding:10px 14px; font-weight:700; font-size:14px;
+    background:var(--card2); display:flex; justify-content:space-between; align-items:center;
+  }
+  .md-head .badge{
+    font-size:11px; font-weight:600; color:var(--bg); background:var(--accent);
+    padding:2px 8px; border-radius:8px;
+  }
+  .match{
+    padding:12px 14px; border-top:1px solid var(--line);
+  }
+  .match-row{
+    display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+  }
+  .teams{font-size:16.5px; font-weight:700;}
+  .meta{font-size:12.5px; color:var(--muted); margin-top:3px; font-weight:500;}
+  .status{
+    font-size:11.5px; font-weight:800; padding:4px 9px; border-radius:8px; white-space:nowrap; margin-left:8px;
+  }
+  .status.open{background:rgba(61,220,151,0.15); color:var(--green);}
+  .status.locked{background:rgba(255,107,107,0.15); color:var(--red);}
+  .detail{display:none; margin-top:10px;}
+  .detail.show{display:block;}
+  .info-box{
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    padding:10px; margin-bottom:10px; font-size:12.5px; color:var(--muted); line-height:1.5;
+  }
+  .info-box b{color:var(--text);}
+  .pred-row{display:flex; align-items:center; gap:10px; justify-content:center; margin:10px 0;}
+  .pred-row input{
+    width:54px; height:48px; text-align:center; font-size:20px; font-weight:700;
+    background:var(--bg); color:var(--text); border:2px solid var(--line); border-radius:10px;
+    transition:border-color 0.2s;
+  }
+  .pred-row input.filled{ border-color:var(--accent); }
+  .pred-row input:disabled{opacity:0.6;}
+  .vs{font-size:13px; color:var(--muted);}
+  .pred-team{font-size:12px; text-align:center; color:var(--muted); width:54px;}
+  .actions{display:flex; gap:8px; margin-top:8px;}
+  .actions button{
+    flex:1; padding:10px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card2); color:var(--text); font-size:13px; font-weight:600;
+  }
+  .actions button.primary{background:var(--accent); color:var(--bg); border:none;}
+  .actions button:disabled{opacity:0.4;}
+  .saved-note{font-size:11px; color:var(--green); margin-top:6px; min-height:14px;}
+  .topbar-actions{display:flex; gap:8px;}
+  .topbar-actions button{
+    background:var(--card2); border:1px solid var(--line); color:var(--text);
+    border-radius:10px; padding:8px 10px; font-size:12px;
+  }
+  .name-bar{
+    display:flex; gap:8px; align-items:center; margin-bottom:10px; font-size:12px; color:var(--muted);
+  }
+  .name-bar input{
+    flex:1; background:var(--card2); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:8px 10px; font-size:13px;
+  }
+  .export-box{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:14px; margin-top:14px;
+  }
+  .export-header{
+    background:var(--accent); color:var(--bg); font-weight:700; font-size:15px;
+    text-align:center; padding:12px; border-radius:10px; cursor:pointer;
+    transition:background 0.15s, transform 0.05s;
+  }
+  .export-header:active{ background:#00b56a; transform:scale(0.99); }
+  .export-header.shake{ animation: shake 0.4s; background:var(--accent2); color:#fff; }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-6px);}
+    40%{transform:translateX(6px);}
+    60%{transform:translateX(-4px);}
+    80%{transform:translateX(4px);}
+  }
+  .name-bar input.missing{ border-color:var(--accent2); box-shadow:0 0 0 2px rgba(255,94,58,0.35); }
+  .export-box textarea{
+    width:100%; min-height:140px; background:var(--bg); color:var(--text);
+    border:1px solid var(--line); border-radius:10px; padding:10px; font-size:12.5px;
+    font-family:ui-monospace, Menlo, monospace; line-height:1.5;
+  }
+  .export-box .actions{margin-top:8px;}
+  .toast{
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+    background:var(--card2); border:1px solid var(--line); color:var(--text);
+    padding:8px 16px; border-radius:20px; font-size:12px; opacity:0; transition:opacity 0.3s;
+    pointer-events:none; z-index:50;
+  }
+  .toast.show{opacity:1;}
+  .countdown{
+    font-weight:800; animation: fifa-blink 3s ease-in-out infinite, fifa-color 8s linear infinite;
+  }
+  @keyframes fifa-blink{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.3; }
+  }
+  @keyframes fifa-color{
+    0%{ color:#00d97e; }
+    33%{ color:#4dabf7; }
+    66%{ color:#ff5e3a; }
+    100%{ color:#00d97e; }
+  }
+  .lb-toggle{
+    width:100%; margin:0 0 14px; background:var(--card2); color:var(--text);
+    border:1px solid var(--line); border-radius:12px; padding:12px; font-size:14px; font-weight:700;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SHC-1999-n Fifa 2026</h1>
+      <div class="subtitle" style="font-style:italic;">Trust in God and do the right</div>
+      <div class="subtitle" id="clock"></div>
+    </div>
+    <div class="topbar-actions">
+      <button onclick="goToday()">Today</button>
+    </div>
+  </header>
+
+  <div class="name-bar">
+    <span>Your name</span>
+    <input type="text" id="userName" placeholder="e.g. Raj" oninput="saveName()">
+  </div>
+
+  <div class="nav">
+    <button id="prevBtn" onclick="changeWindow(-1)">&#8592;</button>
+    <div class="label" id="windowLabel"></div>
+    <button id="nextBtn" onclick="changeWindow(1)">&#8594;</button>
+  </div>
+
+  <button class="lb-toggle" onclick="surpriseMe()">🎲 Surprise Me</button>
+
+  <div id="matchdays"></div>
+
+  <div class="export-box">
+    <div class="export-header" onclick="confirmExport()">Compose & Submit</div>
+    <div style="font-size:12px; color:var(--muted); margin-top:8px;">
+      Pressing composes your predictions and copies it to be pasted.
+    </div>
+    <textarea id="exportText" readonly placeholder="Tap above to compose and copy your message..." style="margin-top:10px;"></textarea>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- DATA ----------
+// Source schedule times are labeled as listed (CEST, UTC+2). matchDateTime() converts to true UTC.
+const matches = [
+  {id:1, date:"2026-06-11", time:"21:00", group:"A", home:"Mexico", away:"South Africa", md:1},
+
+  {id:2, date:"2026-06-12", time:"04:00", group:"A", home:"South Korea", away:"Czechia", md:2},
+  {id:3, date:"2026-06-12", time:"21:00", group:"B", home:"Canada", away:"Bosnia & Herzegovina", md:2},
+
+  {id:4, date:"2026-06-13", time:"02:00", group:"D", home:"USA", away:"Paraguay", md:3},
+  {id:5, date:"2026-06-13", time:"21:00", group:"B", home:"Qatar", away:"Switzerland", md:3},
+
+  {id:6, date:"2026-06-14", time:"00:00", group:"C", home:"Brazil", away:"Morocco", md:4},
+  {id:7, date:"2026-06-14", time:"03:00", group:"C", home:"Haiti", away:"Scotland", md:4},
+  {id:8, date:"2026-06-14", time:"06:00", group:"D", home:"Australia", away:"Turkey", md:4},
+  {id:9, date:"2026-06-14", time:"19:00", group:"E", home:"Germany", away:"Curaçao", md:4},
+  {id:10, date:"2026-06-14", time:"22:00", group:"F", home:"Netherlands", away:"Japan", md:4},
+
+  {id:11, date:"2026-06-15", time:"01:00", group:"E", home:"Ivory Coast", away:"Ecuador", md:5},
+  {id:12, date:"2026-06-15", time:"04:00", group:"F", home:"Sweden", away:"Tunisia", md:5},
+  {id:13, date:"2026-06-15", time:"18:00", group:"H", home:"Spain", away:"Cape Verde", md:5},
+  {id:14, date:"2026-06-15", time:"21:00", group:"G", home:"Belgium", away:"Egypt", md:5},
+
+  {id:15, date:"2026-06-16", time:"00:00", group:"H", home:"Saudi Arabia", away:"Uruguay", md:6},
+  {id:16, date:"2026-06-16", time:"03:00", group:"G", home:"Iran", away:"New Zealand", md:6},
+  {id:17, date:"2026-06-16", time:"21:00", group:"I", home:"France", away:"Senegal", md:6},
+
+  {id:18, date:"2026-06-17", time:"00:00", group:"I", home:"Iraq", away:"Norway", md:7},
+  {id:19, date:"2026-06-17", time:"03:00", group:"J", home:"Argentina", away:"Algeria", md:7},
+  {id:20, date:"2026-06-17", time:"06:00", group:"J", home:"Austria", away:"Jordan", md:7},
+  {id:21, date:"2026-06-17", time:"19:00", group:"K", home:"Portugal", away:"DR Congo", md:7},
+  {id:22, date:"2026-06-17", time:"22:00", group:"L", home:"England", away:"Croatia", md:7},
+
+  {id:23, date:"2026-06-18", time:"01:00", group:"L", home:"Ghana", away:"Panama", md:8},
+  {id:24, date:"2026-06-18", time:"04:00", group:"K", home:"Uzbekistan", away:"Colombia", md:8},
+  {id:25, date:"2026-06-18", time:"18:00", group:"A", home:"Czechia", away:"South Africa", md:8},
+  {id:26, date:"2026-06-18", time:"21:00", group:"B", home:"Switzerland", away:"Bosnia and Herzegovina", md:8},
+
+  {id:27, date:"2026-06-19", time:"00:00", group:"B", home:"Canada", away:"Qatar", md:9},
+  {id:28, date:"2026-06-19", time:"03:00", group:"A", home:"Mexico", away:"South Korea", md:9},
+  {id:29, date:"2026-06-19", time:"21:00", group:"D", home:"United States", away:"Australia", md:9},
+
+  {id:30, date:"2026-06-20", time:"00:00", group:"C", home:"Scotland", away:"Morocco", md:10},
+  {id:31, date:"2026-06-20", time:"03:00", group:"C", home:"Brazil", away:"Haiti", md:10},
+  {id:32, date:"2026-06-20", time:"06:00", group:"D", home:"Turkey", away:"Paraguay", md:10},
+  {id:33, date:"2026-06-20", time:"18:00", group:"F", home:"Netherlands", away:"Sweden", md:10},
+  {id:34, date:"2026-06-20", time:"21:00", group:"E", home:"Germany", away:"Ivory Coast", md:10},
+
+  {id:35, date:"2026-06-21", time:"00:00", group:"E", home:"Ecuador", away:"Curaçao", md:11},
+  {id:36, date:"2026-06-21", time:"04:00", group:"F", home:"Tunisia", away:"Japan", md:11, note:"1,000th FIFA World Cup match"},
+  {id:37, date:"2026-06-21", time:"18:00", group:"H", home:"Spain", away:"Saudi Arabia", md:11},
+  {id:38, date:"2026-06-21", time:"21:00", group:"G", home:"Belgium", away:"Iran", md:11},
+
+  {id:39, date:"2026-06-22", time:"00:00", group:"H", home:"Uruguay", away:"Cape Verde", md:12},
+  {id:40, date:"2026-06-22", time:"03:00", group:"G", home:"New Zealand", away:"Egypt", md:12},
+  {id:41, date:"2026-06-22", time:"21:00", group:"J", home:"Argentina", away:"Austria", md:12},
+
+  {id:42, date:"2026-06-23", time:"00:00", group:"I", home:"France", away:"Iraq", md:13},
+  {id:43, date:"2026-06-23", time:"03:00", group:"I", home:"Norway", away:"Senegal", md:13},
+  {id:44, date:"2026-06-23", time:"06:00", group:"J", home:"Jordan", away:"Algeria", md:13},
+  {id:45, date:"2026-06-23", time:"19:00", group:"K", home:"Portugal", away:"Uzbekistan", md:13},
+  {id:46, date:"2026-06-23", time:"22:00", group:"L", home:"England", away:"Ghana", md:13},
+
+  {id:47, date:"2026-06-24", time:"01:00", group:"L", home:"Panama", away:"Croatia", md:14},
+  {id:48, date:"2026-06-24", time:"04:00", group:"K", home:"Colombia", away:"DR Congo", md:14},
+  {id:49, date:"2026-06-24", time:"19:00", group:"B", home:"Switzerland", away:"Canada", md:14},
+  {id:50, date:"2026-06-24", time:"22:00", group:"B", home:"Bosnia & Herzegovina", away:"Qatar", md:14},
+
+  {id:51, date:"2026-06-25", time:"01:00", group:"C", home:"Scotland", away:"Brazil", md:15},
+  {id:52, date:"2026-06-25", time:"04:00", group:"C", home:"Morocco", away:"Haiti", md:15},
+  {id:53, date:"2026-06-25", time:"19:00", group:"A", home:"Czechia", away:"Mexico", md:15},
+  {id:54, date:"2026-06-25", time:"22:00", group:"A", home:"South Africa", away:"South Korea", md:15},
+
+  {id:55, date:"2026-06-26", time:"01:00", group:"D", home:"Turkiye", away:"USA", md:16},
+  {id:56, date:"2026-06-26", time:"04:00", group:"D", home:"Paraguay", away:"Australia", md:16},
+  {id:57, date:"2026-06-26", time:"19:00", group:"I", home:"Norway", away:"France", md:16},
+  {id:58, date:"2026-06-26", time:"22:00", group:"I", home:"Senegal", away:"Iraq", md:16},
+
+  {id:59, date:"2026-06-27", time:"01:00", group:"H", home:"Cape Verde", away:"Saudi Arabia", md:17},
+  {id:60, date:"2026-06-27", time:"04:00", group:"H", home:"Uruguay", away:"Spain", md:17},
+  {id:61, date:"2026-06-27", time:"19:00", group:"G", home:"Egypt", away:"Iran", md:17},
+  {id:62, date:"2026-06-27", time:"22:00", group:"G", home:"New Zealand", away:"Belgium", md:17}
+];
+
+// Witty / context facts per match (best-effort, fun trivia style)
+const facts = {
+  1: "Mexico opens the tournament as co-host — first World Cup opener for Mexico since 1986.",
+  2: "South Korea vs Czechia is a first-ever World Cup meeting between the two sides.",
+  3: "Canada's first World Cup group match on home soil since 1986 — first co-host appearance.",
+  4: "USA vs Paraguay: the Americans open as co-hosts under the bright lights.",
+  5: "Qatar return to the World Cup stage as 2022 hosts, now playing on the road.",
+  6: "Brazil vs Morocco is a rematch of styles — Brazilian flair vs Morocco's historic 2022 semifinal run.",
+  7: "Haiti make a rare World Cup appearance against a well-organised Scotland side.",
+  8: "Australia vs Turkey: both sides will be desperate for an early three points in a tight group.",
+  9: "Germany vs Curaçao — a huge gulf in World Cup pedigree, but Curaçao are the smallest nation by population ever to qualify.",
+  10: "Netherlands vs Japan: Japan have a habit of shocking European giants at World Cups.",
+  11: "Ivory Coast vs Ecuador — both sides love a direct, physical approach.",
+  12: "Sweden vs Tunisia: a classic 'organised European vs disciplined African side' clash.",
+  13: "Spain vs Cape Verde — Cape Verde are one of the smallest nations ever to reach a World Cup.",
+  14: "Belgium vs Egypt: Mohamed Salah carries Egypt's hopes against Belgium's golden generation reunion.",
+  15: "Saudi Arabia stunned Argentina in 2022 — they'll fancy another upset against Uruguay.",
+  16: "Iran vs New Zealand — a clash of styles between disciplined defending and direct attacking football.",
+  17: "France vs Senegal — many Senegalese players ply their trade in Ligue 1, adding extra spice.",
+  18: "Iraq return to the World Cup for the first time since 1986 against Norway and Haaland.",
+  19: "Argentina open their title defence against Algeria.",
+  20: "Austria vs Jordan — Jordan's first ever World Cup match.",
+  21: "Portugal vs DR Congo — Cristiano Ronaldo's likely final World Cup campaign begins here.",
+  22: "England vs Croatia — a repeat of two recent major tournament knockout classics.",
+  23: "Ghana vs Panama — both sides will see this as a must-win opener.",
+  24: "Uzbekistan's first ever World Cup match, against Colombia.",
+  25: "Czechia vs South Africa — South Africa back at the World Cup for the first time since hosting in 2010.",
+  26: "Switzerland vs Bosnia and Herzegovina — a tight European tactical battle.",
+  27: "Canada vs Qatar — co-hosts looking to build momentum.",
+  28: "Mexico vs South Korea — a repeat of a memorable 2018 group stage thriller.",
+  29: "USA vs Australia — co-hosts facing the Socceroos in primetime.",
+  30: "Scotland vs Morocco — Morocco will be heavy favourites after their 2022 heroics.",
+  31: "Brazil vs Haiti — Brazil expected to cruise, but Haiti will give everything.",
+  32: "Turkey vs Paraguay — both sides know a win here could be pivotal for qualification.",
+  33: "Netherlands vs Sweden — a North Sea derby of sorts in the group stage.",
+  34: "Germany vs Ivory Coast — Germany will want to bounce back strongly here.",
+  35: "Ecuador vs Curaçao — Ecuador heavy favourites against the World Cup's smallest-ever nation.",
+  36: "Tunisia vs Japan marks the 1,000th match in FIFA World Cup history — a landmark fixture.",
+  37: "Spain vs Saudi Arabia — Spain will want revenge for Saudi's giant-killing reputation.",
+  38: "Belgium vs Iran — a clash that could decide who progresses from Group G.",
+  39: "Uruguay vs Cape Verde — Uruguay's experienced core against the tournament's feel-good underdogs.",
+  40: "New Zealand vs Egypt — first ever meeting between these two nations at a World Cup.",
+  41: "Argentina vs Austria — the defending champions face a well-drilled European side.",
+  42: "France vs Iraq — Iraq's return to the World Cup continues against the European heavyweights.",
+  43: "Norway vs Senegal — Erling Haaland's first World Cup campaign reaches a key test.",
+  44: "Jordan vs Algeria — two sides with passionate, vocal fanbases following closely.",
+  45: "Portugal vs Uzbekistan — Ronaldo's side expected to be heavy favourites.",
+  46: "England vs Ghana — Ghana have a track record of shocks against bigger nations.",
+  47: "Panama vs Croatia — Croatia's experienced core looks to control the game.",
+  48: "Colombia vs DR Congo — Colombia's flair against DR Congo's physicality.",
+  49: "Switzerland vs Canada — pivotal Group B fixture with progression on the line.",
+  50: "Bosnia & Herzegovina vs Qatar — both could be fighting for a final group spot.",
+  51: "Scotland vs Brazil — a dream fixture for Scottish fans against the five-time champions.",
+  52: "Morocco vs Haiti — Morocco look to build on their historic 2022 run.",
+  53: "Czechia vs Mexico — a rematch of the 2018 group stage.",
+  54: "South Africa vs South Korea — Bafana Bafana's return to the world stage continues.",
+  55: "Turkiye vs USA — co-hosts USA face a tricky European test.",
+  56: "Paraguay vs Australia — both sides scrapping for qualification points.",
+  57: "Norway vs France — Haaland vs Mbappé, a genuine box-office showdown.",
+  58: "Senegal vs Iraq — Senegal's pace against Iraq's renewed World Cup energy.",
+  59: "Cape Verde vs Saudi Arabia — two underdog stories collide.",
+  60: "Uruguay vs Spain — a heavyweight European vs South American finale.",
+  61: "Egypt vs Iran — Salah's Egypt look to seal qualification.",
+  62: "New Zealand vs Belgium — Belgium's golden generation's last World Cup dance continues."
+};
+
+// Simple host/venue + head-to-head style context (general, illustrative)
+function getStats(m){
+  const venues = {
+    "A":"Estadio Azteca, Mexico City", "B":"BMO Field, Toronto", "C":"Lincoln Financial Field, Philadelphia",
+    "D":"Levi's Stadium, San Francisco Bay Area", "E":"AT&T Stadium, Dallas", "F":"Mercedes-Benz Stadium, Atlanta",
+    "G":"Hard Rock Stadium, Miami", "H":"SoFi Stadium, Los Angeles", "I":"Lumen Field, Seattle",
+    "J":"NRG Stadium, Houston", "K":"Gillette Stadium, Boston", "L":"MetLife Stadium, New York/New Jersey"
+  };
+  return {
+    venue: venues[m.group] || "TBD Stadium, USA/Canada/Mexico",
+    h2h: "Limited recent head-to-head data — both sides will be assessing each other from qualifying form and recent friendlies.",
+    fact: facts[m.id] || "A fresh World Cup matchup with everything to play for."
+  };
+}
+
+// ---------- STATE ----------
+let predictions = {}; // {matchId: {home, away, submitted, submittedAt}}
+let openDetails = new Set();
+let userName = "";
+let windowStart = 1; // matchday index that starts the visible 2-day window
+const TOTAL_MD = 17;
+
+// ---------- STORAGE ----------
+// Hosted version: use localStorage so predictions persist on each user's device/browser.
+const storage = {
+  async get(key){
+    const v = localStorage.getItem(key);
+    return v===null ? null : {key, value: v};
+  },
+  async set(key, value){
+    localStorage.setItem(key, value);
+    return {key, value};
+  }
+};
+async function loadState(){
+  try{
+    const r = await storage.get('predictions', false);
+    predictions = r ? JSON.parse(r.value) : {};
+  }catch(e){ predictions = {}; }
+  try{
+    const r2 = await storage.get('userName', false);
+    userName = r2 ? JSON.parse(r2.value) : "";
+  }catch(e){ userName = ""; }
+  document.getElementById('userName').value = userName;
+}
+async function savePredictions(){
+  try{ await storage.set('predictions', JSON.stringify(predictions), false); }catch(e){}
+}
+async function saveName(){
+  userName = document.getElementById('userName').value;
+  document.getElementById('userName').classList.remove('missing');
+  try{ await storage.set('userName', JSON.stringify(userName), false); }catch(e){}
+}
+
+// ---------- TIME HELPERS ----------
+// Source schedule times are in CEST (UTC+2). Convert to true UTC instants by subtracting 2 hours.
+function nowUTC(){ return new Date(); }
+function matchDateTime(m){
+  const utcMs = Date.parse(m.date + "T" + m.time + ":00Z") - (2 * 60 * 60 * 1000);
+  return new Date(utcMs);
+}
+function isLocked(m){
+  return nowUTC() >= matchDateTime(m);
+}
+function fmtTime(m){
+  const d = matchDateTime(m);
+  // Display in the viewer's local timezone
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  const day = d.toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short'});
+  const tzName = Intl.DateTimeFormat(undefined, {timeZoneName:'short'}).formatToParts(d).find(p=>p.type==='timeZoneName').value;
+  return `${day}, ${hh}:${mm} ${tzName}`;
+}
+
+// ---------- MATCHDAY DETECTION ----------
+function getTodayMatchday(){
+  const today = new Date();
+  const todayStr = today.getUTCFullYear()+"-"+String(today.getUTCMonth()+1).padStart(2,'0')+"-"+String(today.getUTCDate()).padStart(2,'0');
+  let md = matches.find(m=>m.date===todayStr);
+  if(md) return md.md;
+  // find closest upcoming
+  let upcoming = matches.filter(m=>m.date>=todayStr);
+  if(upcoming.length) return upcoming[0].md;
+  return TOTAL_MD;
+}
+
+// ---------- RENDER ----------
+function getMatchesForMD(md){ return matches.filter(m=>m.md===md); }
+function mdLabel(md){
+  const ms = getMatchesForMD(md);
+  if(!ms.length) return `Match Day ${md}`;
+  const d = new Date(ms[0].date + "T00:00:00Z");
+  const dateStr = d.toLocaleDateString('en-GB', {weekday:'long', day:'2-digit', month:'short', timeZone:'UTC'});
+  return `Match Day ${md} — ${dateStr}`;
+}
+
+function render(){
+  // clamp window
+  if(windowStart < 1) windowStart = 1;
+  if(windowStart > TOTAL_MD - 1) windowStart = TOTAL_MD - 1;
+  document.getElementById('prevBtn').disabled = windowStart <= 1;
+  document.getElementById('nextBtn').disabled = windowStart >= TOTAL_MD - 1;
+
+  const mds = [windowStart, windowStart+1].filter(md=>md<=TOTAL_MD);
+  document.getElementById('windowLabel').textContent = mds.map(md=>`Match Day ${md}`).join("   /   ");
+
+  const container = document.getElementById('matchdays');
+  container.innerHTML = "";
+
+  mds.forEach(md=>{
+    const block = document.createElement('div');
+    block.className = 'matchday';
+    const todayMd = getTodayMatchday();
+    block.innerHTML = `<div class="md-head"><span>${mdLabel(md)}</span>${md===todayMd ? '<span class="badge">TODAY</span>' : ''}</div>`;
+
+    getMatchesForMD(md).forEach(m=>{
+      const locked = isLocked(m);
+      const p = predictions[m.id] || {};
+      let statusClass = locked ? 'locked' : 'open';
+      let statusText = locked ? 'Locked' : 'Open';
+
+      const stats = getStats(m);
+
+      const matchDiv = document.createElement('div');
+      matchDiv.className = 'match';
+      matchDiv.innerHTML = `
+        <div class="match-row" onclick="toggleDetail(${m.id})">
+          <div>
+            <div class="teams">M${m.id}: ${m.home} vs ${m.away}</div>
+            <div class="meta">Group ${m.group} &middot; ${fmtTime(m)}${p.home!==undefined && p.away!==undefined ? ` &middot; Prediction: ${p.home}-${p.away}` : ''}</div>
+          </div>
+          <div class="status ${statusClass}">${statusText}</div>
+        </div>
+        <div class="detail${openDetails.has(m.id) ? ' show' : ''}" id="detail-${m.id}" onclick="event.stopPropagation()">
+          <div class="info-box">
+            <div><b>Venue:</b> ${stats.venue}</div>
+            <div style="margin-top:4px;"><b>Head-to-head:</b> ${stats.h2h}</div>
+            <div style="margin-top:4px;"><b>Talking point:</b> ${stats.fact}${m.note ? ' ('+m.note+')' : ''}</div>
+            ${openFactCache[m.id] ? `<div style="margin-top:4px;">${openFactCache[m.id]}</div>` : ''}
+          </div>
+          <div class="pred-row" onclick="event.stopPropagation()">
+            <div class="pred-team">${m.home}</div>
+            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20" id="home-${m.id}" class="${p.home!==undefined?'filled':''}" value="${p.home!==undefined?p.home:''}" ${locked?'disabled':''} oninput="markFilled(${m.id})" onchange="updatePred(${m.id})">
+            <div class="vs">:</div>
+            <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="20" id="away-${m.id}" class="${p.away!==undefined?'filled':''}" value="${p.away!==undefined?p.away:''}" ${locked?'disabled':''} oninput="markFilled(${m.id})" onchange="updatePred(${m.id})">
+            <div class="pred-team">${m.away}</div>
+          </div>
+          <div class="saved-note" id="note-${m.id}"></div>
+        </div>
+      `;
+      block.appendChild(matchDiv);
+    });
+    container.appendChild(block);
+  });
+}
+
+// Generic rotating one-liners shown alongside the match-specific talking point
+const rotatingFacts = [
+  "Fun fact: the World Cup trophy is solid gold and weighs about 6.1 kg.",
+  "Fun fact: the first World Cup in 1930 had only 13 teams.",
+  "Fun fact: Brazil is the only team to play in every World Cup since 1930.",
+  "Fun fact: the fastest World Cup goal ever was scored in 11 seconds.",
+  "Fun fact: Germany has reached the most World Cup finals (8).",
+  "Fun fact: the World Cup was stolen in 1966 and found by a dog named Pickles.",
+  "Fun fact: 2026 is the first World Cup with 48 teams.",
+  "Fun fact: penalty shootouts were introduced to World Cups in 1982.",
+  "Fun fact: the average World Cup match has about 3 goals combined.",
+  "Fun fact: red cards weren't used at World Cups until 1970.",
+  "Fun fact: a World Cup ball travels roughly 8-10km during a match.",
+  "Fun fact: Mexico, USA & Canada co-hosting is a first in World Cup history.",
+  "Fun fact: extra time was introduced from the very first World Cup in 1930.",
+  "Fun fact: the 'Golden Boot' goes to the tournament's top scorer.",
+  "Fun fact: some players run over 10km in a single World Cup match."
+];
+function randomRotatingFact(){
+  return rotatingFacts[Math.floor(Math.random()*rotatingFacts.length)];
+}
+let openFactCache = {};
+
+function toggleDetail(id){
+  if(openDetails.has(id)){
+    openDetails.delete(id);
+  } else {
+    openDetails.add(id);
+    openFactCache[id] = randomRotatingFact();
+  }
+  render();
+}
+
+function markFilled(id){
+  const h = document.getElementById('home-'+id);
+  const a = document.getElementById('away-'+id);
+  h.classList.toggle('filled', h.value !== '');
+  a.classList.toggle('filled', a.value !== '');
+}
+
+function surpriseMe(){
+  const ms = visibleMatches().filter(m=>!isLocked(m) && predictions[m.id]===undefined);
+  if(!ms.length){
+    showToast("Nothing left to surprise you with here!");
+    return;
+  }
+  // weighted plausible scoreline pool (mostly low-scoring, occasional thriller)
+  const pool = [
+    [1,0],[0,0],[1,1],[2,0],[2,1],[0,1],[1,2],[2,2],[3,1],[1,3],[0,2],[3,0],[3,2],[2,3],[4,1]
+  ];
+  ms.forEach(m=>{
+    const [h,a] = pool[Math.floor(Math.random()*pool.length)];
+    predictions[m.id] = {home:h, away:a};
+  });
+  savePredictions();
+  showToast("🎲 Surprise predictions added!");
+  render();
+}
+
+function updatePred(id){
+  const h = document.getElementById('home-'+id).value;
+  const a = document.getElementById('away-'+id).value;
+  if(h==='' && a===''){ delete predictions[id]; }
+  else{
+    predictions[id] = predictions[id] || {};
+    predictions[id].home = h===''?0:parseInt(h);
+    predictions[id].away = a===''?0:parseInt(a);
+  }
+  savePredictions();
+  const note = document.getElementById('note-'+id);
+  if(note){ note.textContent = "Saved."; setTimeout(()=>{ if(note) note.textContent=''; }, 1500); }
+  render();
+}
+
+function changeWindow(dir){
+  windowStart += dir*2;
+  render();
+}
+function goToday(){
+  const md = getTodayMatchday();
+  windowStart = md % 2 === 1 ? md : md - 1;
+  if(windowStart < 1) windowStart = 1;
+  render();
+}
+
+// ---------- EXPORT ----------
+function visibleMatches(){
+  const mds = [windowStart, windowStart+1].filter(md=>md<=TOTAL_MD);
+  return matches.filter(m=>mds.includes(m.md));
+}
+
+function generateExport(){
+  const ms = visibleMatches();
+  const name = userName || "Player";
+  let lines = [];
+  lines.push(`*World Cup Predictions - ${name}*`);
+  let currentMd = null;
+  ms.forEach(m=>{
+    if(m.md !== currentMd){
+      currentMd = m.md;
+      lines.push("");
+      lines.push(`_${mdLabel(m.md)}_`);
+    }
+    const p = predictions[m.id];
+    const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
+    lines.push(`M${m.id}: ${m.home} vs ${m.away}: ${predStr}`);
+  });
+  document.getElementById('exportText').value = lines.join("\n");
+}
+
+const closingLines = [
+  "May your predictions be sharper than VAR replays.",
+  "Remember: it's not gambling if you're confident.",
+  "Place your bets... wait, wrong app. Good luck!",
+  "If this goes wrong, blame the ref, not the predictor.",
+  "Confidence level: Group Stage Pundit.",
+  "Future Nostradamus reporting for duty.",
+  "May the odds be ever in your favour.",
+  "Predictions locked tighter than Italy's defense (allegedly).",
+  "Somewhere, a bookmaker just felt a chill.",
+  "This message is 100% accurate, 50% of the time.",
+  "Crystal ball says: trust the process.",
+  "Loading delusions of grandeur... done.",
+  "If wrong, this message will self-destruct (it won't, but emotionally).",
+  "Certified by the Ministry of Wishful Thinking.",
+  "Stonks only go up, and so do my predictions."
+];
+function randomClosingLine(){
+  return closingLines[Math.floor(Math.random()*closingLines.length)];
+}
+// ---------- SHARED SHEET SUBMISSION ----------
+const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
+
+function submitPredictionsToSheet(ms, name){
+  ms.filter(m=>!isLocked(m)).forEach(m=>{
+    const p = predictions[m.id];
+    if(!p || p.home===undefined || p.away===undefined) return; // skip unpredicted matches
+    const payload = {
+      name: name,
+      matchId: "M"+m.id,
+      home: m.home,
+      away: m.away,
+      predHome: p.home,
+      predAway: p.away
+    };
+    fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    }).catch(()=>{ /* fail silently, copy still works */ });
+  });
+}
+
+async function confirmExport(){
+  if(!userName || !userName.trim()){
+    const nameInput = document.getElementById('userName');
+    const header = document.querySelector('.export-header');
+    nameInput.classList.add('missing');
+    nameInput.placeholder = "Enter your name first";
+    nameInput.focus();
+    header.classList.add('shake');
+    setTimeout(()=>header.classList.remove('shake'), 400);
+    showToast("Please enter your name before composing.");
+    return;
+  }
+  const ms = visibleMatches();
+  const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
+
+  // regenerate export text with confirmation timestamp
+  const name = userName || "Player";
+  let lines = [];
+  lines.push(`*World Cup Predictions - ${name}*`);
+  lines.push(`_Confirmed at: ${ts}_`);
+  let currentMd = null;
+  ms.filter(m=>!isLocked(m)).forEach(m=>{
+    if(m.md !== currentMd){
+      currentMd = m.md;
+      lines.push("");
+      lines.push(`_${mdLabel(m.md)}_`);
+    }
+    const p = predictions[m.id];
+    const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
+    lines.push(`M${m.id}: ${m.home} vs ${m.away}: ${predStr}`);
+  });
+  const text = lines.join("\n") + "\n\n" + randomClosingLine();
+  document.getElementById('exportText').value = text;
+
+  // submit predictions to shared sheet in the background (does not block copy)
+  submitPredictionsToSheet(ms, name);
+
+  // try clipboard
+  let copied = false;
+  try{
+    await navigator.clipboard.writeText(text);
+    copied = true;
+  }catch(e){
+    try{
+      const ta = document.getElementById('exportText');
+      ta.removeAttribute('readonly');
+      ta.focus();
+      ta.select();
+      copied = document.execCommand('copy');
+      ta.setAttribute('readonly', 'readonly');
+      ta.blur();
+    }catch(e2){ copied = false; }
+  }
+  showToast(copied ? "Copied to clipboard!" : "Tap and hold the box to copy.");
+  render();
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ---------- CLOCK ----------
+function updateClock(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  let clockText = `Local time now: ${hh}:${mm}:${ss}`;
+
+  const next = matches.find(m=>matchDateTime(m) > now);
+  if(next){
+    const diff = matchDateTime(next) - now;
+    const totalMin = Math.floor(diff/60000);
+    const dH = Math.floor(totalMin/60);
+    const dM = totalMin % 60;
+    const dSec = Math.floor((diff%60000)/1000);
+    let countdown;
+    if(dH > 0) countdown = `${dH}h ${dM}m`;
+    else if(dM > 0) countdown = `${dM}m ${dSec}s`;
+    else countdown = `${dSec}s`;
+    clockText += ` · <span class="countdown">${next.home} vs ${next.away} kicks off in ${countdown}</span>`;
+  }
+  document.getElementById('clock').innerHTML = clockText;
+  // re-render lock states periodically without losing scroll too much
+}
+setInterval(()=>{ updateClock(); }, 1000);
+setInterval(()=>{ render(); }, 15000);
+
+// ---------- SWIPE GESTURES ----------
+(function initSwipe(){
+  const el = document.getElementById('matchdays');
+  let startX = 0, startY = 0;
+  el.addEventListener('touchstart', e=>{
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive:true});
+  el.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)*1.5){
+      if(dx < 0) changeWindow(1);   // swipe left -> next
+      else changeWindow(-1);        // swipe right -> previous
+    }
+  }, {passive:true});
+})();
+
+// ---------- ERROR VISIBILITY ----------
+window.onerror = function(msg, src, line){
+  const c = document.getElementById('matchdays');
+  if(c) c.innerHTML = '<div style="padding:16px; color:#ff6b6b; font-size:13px;">Error: '+msg+' (line '+line+')</div>' + c.innerHTML;
+};
+
+// ---------- INIT ----------
+(async function init(){
+  await loadState();
+  windowStart = (function(){
+    const md = getTodayMatchday();
+    let w = md % 2 === 1 ? md : md - 1;
+    if(w < 1) w = 1;
+    return w;
+  })();
+  updateClock();
+  render();
+})();
+</script>
+</body>
+</html>
