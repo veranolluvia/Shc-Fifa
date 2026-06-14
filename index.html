@@ -699,25 +699,58 @@ function randomClosingLine(){
 }
 // ---------- SHARED SHEET SUBMISSION ----------
 const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
+const SHEET_SECRET = "shc1999fifa";
 
-function submitPredictionsToSheet(ms, name){
-  ms.filter(m=>!isLocked(m)).forEach(m=>{
+async function submitOneToSheet(payload, maxRetries){
+  for(let attempt=0; attempt<=maxRetries; attempt++){
+    try{
+      const res = await fetch(SHEET_ENDPOINT, {
+        method: 'POST',
+        headers: {'Content-Type': 'text/plain;charset=utf-8'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data && data.status === 'ok') return true;
+      // server returned an error (e.g. validation) - retrying won't help, give up
+      return false;
+    }catch(e){
+      if(attempt < maxRetries){
+        await new Promise(r=>setTimeout(r, 600)); // brief delay before retry
+        continue;
+      }
+      return false;
+    }
+  }
+  return false;
+}
+
+async function submitPredictionsToSheet(ms, name){
+  const toSubmit = ms.filter(m=>!isLocked(m)).map(m=>{
     const p = predictions[m.id];
-    if(!p || p.home===undefined || p.away===undefined) return; // skip unpredicted matches
-    const payload = {
-      name: name,
-      matchId: "M"+m.id,
-      home: m.home,
-      away: m.away,
-      predHome: p.home,
-      predAway: p.away
+    if(!p || p.home===undefined || p.away===undefined) return null;
+    return {
+      matchLabel: "M"+m.id,
+      payload: {
+        secret: SHEET_SECRET,
+        name: name,
+        matchId: "M"+m.id,
+        home: m.home,
+        away: m.away,
+        predHome: p.home,
+        predAway: p.away
+      }
     };
-    fetch(SHEET_ENDPOINT, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify(payload)
-    }).catch(()=>{ /* fail silently, copy still works */ });
-  });
+  }).filter(Boolean);
+
+  const failed = [];
+  for(const item of toSubmit){
+    const ok = await submitOneToSheet(item.payload, 2); // up to 2 retries (3 attempts total)
+    if(!ok) failed.push(item.matchLabel);
+  }
+
+  if(failed.length > 0){
+    showToast(`⚠ ${failed.join(', ')} may not have synced — tap Compose & Submit again to retry.`, 5000);
+  }
 }
 
 // ---------- MY SUBMITTED PICKS ----------
@@ -860,15 +893,15 @@ async function confirmExport(){
       ta.blur();
     }catch(e2){ copied = false; }
   }
-  showToast(copied ? "Copied to clipboard!" : "Tap and hold the box to copy.");
+  showToast(copied ? "Copied to clipboard!" : "Tap and hold the box to copy.", 2000);
   render();
 }
 
-function showToast(msg){
+function showToast(msg, duration){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+  setTimeout(()=>t.classList.remove('show'), duration || 2500);
 }
 
 // ---------- CLOCK ----------
