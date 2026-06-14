@@ -465,7 +465,7 @@ function render(){
       matchDiv.innerHTML = `
         <div class="match-row" onclick="toggleDetail(${m.id})">
           <div>
-            <div class="teams">${m.home} vs ${m.away}</div>
+            <div class="teams">M${m.id}: ${m.home} vs ${m.away}</div>
             <div class="meta">Group ${m.group} &middot; ${fmtTime(m)}${p.home!==undefined && p.away!==undefined ? ` &middot; Prediction: ${p.home}-${p.away}` : ''}</div>
           </div>
           <div class="status ${statusClass}">${statusText}</div>
@@ -598,7 +598,7 @@ function generateExport(){
     }
     const p = predictions[m.id];
     const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
-    lines.push(`${m.home} vs ${m.away}: ${predStr}`);
+    lines.push(`M${m.id}: ${m.home} vs ${m.away}: ${predStr}`);
   });
   document.getElementById('exportText').value = lines.join("\n");
 }
@@ -652,7 +652,7 @@ async function confirmExport(){
     }
     const p = predictions[m.id];
     const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
-    lines.push(`${m.home} vs ${m.away}: ${predStr}`);
+    lines.push(`M${m.id}: ${m.home} vs ${m.away}: ${predStr}`);
   });
   const text = lines.join("\n") + "\n\n" + randomClosingLine();
   document.getElementById('exportText').value = text;
