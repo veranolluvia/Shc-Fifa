@@ -851,8 +851,8 @@ function keypadSelect(val){
   if(side==='home') predictions[matchId].home = val;
   else predictions[matchId].away = val;
 
-  // mark submitted match as edited if needed
-  if(submittedMatches && submittedMatches.has(matchId)){
+  // submittedMatches only exists in TMA — guard safely
+  if(typeof submittedMatches !== 'undefined' && submittedMatches.has(matchId)){
     submittedMatches.delete(matchId);
     if(typeof saveSubmittedMatches === 'function') saveSubmittedMatches();
   }
@@ -860,6 +860,12 @@ function keypadSelect(val){
   savePredictions();
   closeKeypad();
   render();
+
+  // Auto-open the other side if not yet set
+  if(side === 'home'){
+    const p = predictions[matchId] || {};
+    if(p.away === undefined) setTimeout(()=>openKeypad(matchId, 'away'), 200);
+  }
 }
 
 function closeKeypad(){
