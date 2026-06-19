@@ -1044,6 +1044,8 @@ async function loadMyHistory(){
   }
   box.innerHTML = html;
 }
+
+function surpriseMe(){
   const ms = visibleMatches().filter(m=>!isLocked(m) && predictions[m.id]===undefined);
   if(!ms.length){
     showToast("Nothing left to surprise you with here!");
