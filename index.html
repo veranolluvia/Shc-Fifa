@@ -474,7 +474,7 @@
   <div id="matchdays"></div>
 
   <div class="export-box">
-    <div class="export-header" onclick="confirmExport()">Compose & Submit</div>
+    <div class="export-header" onclick="confirmExport()">Confirm</div>
     <div style="font-size:12px; color:var(--muted); margin-top:8px;">
       Pressing composes your predictions and copies it to be pasted.
     </div>
@@ -1512,22 +1512,15 @@ async function confirmExport(){
   const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
   const name = userName || "Player";
 
-  // Build message text
+  // Build message text — concise format
   let lines = [];
-  lines.push(`*World Cup Predictions - ${name}*`);
-  lines.push(`_Confirmed at: ${ts}_`);
-  let currentMd = null;
+  lines.push(`⚽ ${name}`);
   ms.filter(m=>!isLocked(m)).forEach(m=>{
-    if(m.md !== currentMd){
-      currentMd = m.md;
-      lines.push("");
-      lines.push(`_${mdLabel(m.md)}_`);
-    }
     const p = predictions[m.id];
-    const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
-    lines.push(`M${m.id}: ${m.home} vs ${m.away}: ${predStr}`);
+    const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home}-${p.away}` : "—";
+    lines.push(`M${m.id} ${m.home} v ${m.away}: ${predStr}`);
   });
-  const text = lines.join("\n") + "\n\n" + "Don't post in the group and annoy Pri 🙏";
+  const text = lines.join("\n");
   document.getElementById('exportText').value = text;
 
   // Copy to clipboard
