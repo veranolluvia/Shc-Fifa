@@ -341,6 +341,46 @@
     color:var(--bg); border:none; font-size:14px; font-weight:800; cursor:pointer; }
   .really-cancel{ flex:1; height:44px; border-radius:10px; background:var(--card2);
     color:var(--muted); border:none; font-size:14px; font-weight:700; cursor:pointer; }
+  /* ---------- Verification popup ---------- */
+  .verify-overlay{
+    position:fixed; inset:0; z-index:350; display:none;
+    align-items:center; justify-content:center; padding:20px;
+    background:rgba(5,15,29,0.6);
+  }
+  .verify-overlay.show{ display:flex; }
+  .verify-box{
+    background:var(--card); border-radius:16px; padding:20px;
+    max-width:380px; width:100%; max-height:80vh; overflow-y:auto;
+    box-shadow:0 8px 30px rgba(0,0,0,0.4); border:1px solid var(--line);
+    animation:welcome-pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .verify-title{ font-size:16px; font-weight:800; color:var(--accent); text-align:center; margin-bottom:4px; }
+  .verify-sub{ font-size:11.5px; color:var(--muted); text-align:center; margin-bottom:12px; }
+  .verify-list{ font-size:12.5px; color:var(--text); line-height:2; }
+  .verify-row{ border-bottom:1px solid var(--line); padding:3px 0; display:flex; justify-content:space-between; align-items:center; }
+  .verify-row:last-child{ border-bottom:none; }
+  .verify-ok{ color:var(--accent); font-weight:700; }
+  .verify-miss{ color:var(--accent2); font-weight:700; }
+  .verify-close{ width:100%; margin-top:14px; background:var(--accent); color:var(--bg);
+    border:none; border-radius:10px; padding:11px; font-size:14px; font-weight:700; cursor:pointer; }
+  /* ---------- History panel ---------- */
+  .history-panel{
+    background:var(--card); border-radius:14px; padding:12px 14px;
+    margin-top:8px; font-size:12.5px; color:var(--text); line-height:1.8;
+    border:1px solid var(--line);
+  }
+  .history-md{ font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase;
+    letter-spacing:0.5px; margin:8px 0 4px; }
+  .history-row{ display:flex; justify-content:space-between; padding:2px 0;
+    border-bottom:1px solid rgba(255,255,255,0.04); }
+  .history-row:last-child{ border-bottom:none; }
+  .h-match{ color:var(--muted); font-size:12px; }
+  .h-pred{ font-weight:700; }
+  .h-exact{ color:#ffd166; }
+  .h-correct{ color:var(--blue); }
+  .h-wrong{ color:var(--red); }
+  .h-open{ color:var(--accent); }
+  .h-none{ color:var(--muted); font-style:italic; }
 </style>
 </head>
 <body>
@@ -368,13 +408,16 @@
   </div>
 
   <div class="action-row">
-    <button class="action-btn" onclick="playAnimThen('dice', surpriseMe)">🎲 Surprise Me</button>
+    <button class="action-btn" onclick="playAnimThen('thread', loadMyHistory)">My வரலாறு</button>
     <button class="action-btn" onclick="playAnimThen('thread', loadMyPicks)">🔄 All Predictions</button>
     <button class="action-btn" onclick="playAnimThen('trophy', goToLeaderboard)">🏆 Leaderboard</button>
   </div>
   <div id="myPicksBox" style="margin-top:8px;"></div>
 
   <div class="anim-overlay" id="animOverlay"></div>
+  <div class="verify-overlay" id="verifyOverlay">
+    <div class="verify-box" id="verifyBox"></div>
+  </div>
   <div class="keypad-overlay" id="keypadOverlay" onclick="closeKeypad()">
     <div class="keypad-box" onclick="event.stopPropagation()">
       <div class="keypad-title" id="keypadTitle">Score</div>
@@ -915,7 +958,92 @@ function goToLeaderboard(){
   window.location.href = 'leaderboard.html';
 }
 
-function surpriseMe(){
+// ---------- MY வரலாறு — நேற்று, இன்று, நாளை ----------
+async function loadMyHistory(){
+  const box = document.getElementById('myPicksBox');
+
+  // Toggle
+  if(box.dataset.open === 'true'){
+    box.innerHTML = '';
+    box.dataset.open = 'false';
+    return;
+  }
+  box.dataset.open = 'true';
+  box.innerHTML = '<div style="font-size:12px; color:var(--muted); text-align:center;">நேற்று, இன்று, நாளை... loading ✨</div>';
+
+  if(!userName || !userName.trim()){
+    box.innerHTML = '<div style="font-size:12px; color:var(--accent2); text-align:center;">Enter your name first.</div>';
+    return;
+  }
+
+  // Fetch mypicks from sheet
+  let onRecord = {};
+  try{
+    const res = await fetch(SHEET_ENDPOINT + '?type=mypicks&name=' + encodeURIComponent(userName.trim()));
+    const data = await res.json();
+    if(data.status === 'ok'){
+      data.picks.forEach(p=>{
+        const num = parseInt((p.matchId||'').replace(/\D/g,''), 10);
+        if(!isNaN(num)) onRecord[num] = {home:p.predHome, away:p.predAway};
+      });
+    }
+  }catch(e){
+    try{ onRecord = await fetchMyPicksJsonpVerify(userName.trim()); }catch(e2){}
+  }
+
+  // Get yesterday, today, tomorrow in UTC
+  const now = new Date();
+  const todayUTC = now.toISOString().slice(0,10);
+  const d = new Date(now); d.setUTCDate(d.getUTCDate()-1);
+  const yesterdayUTC = d.toISOString().slice(0,10);
+  const t = new Date(now); t.setUTCDate(t.getUTCDate()+1);
+  const tomorrowUTC = t.toISOString().slice(0,10);
+
+  const days = [
+    {label:'நேற்று (Yesterday)', date:yesterdayUTC},
+    {label:'இன்று (Today)', date:todayUTC},
+    {label:'நாளை (Tomorrow)', date:tomorrowUTC}
+  ];
+
+  let html = '<div class="history-panel">';
+  let hasContent = false;
+
+  days.forEach(day=>{
+    const dayMatches = matches.filter(m=>m.date === day.date);
+    if(dayMatches.length === 0) return;
+    hasContent = true;
+    html += `<div class="history-md">${day.label}</div>`;
+    dayMatches.forEach(m=>{
+      const rec = onRecord[m.id];
+      const result = actualResults[m.id];
+      let predHtml = '', verdictClass = 'h-open';
+      if(rec){
+        if(result){
+          const v = scoreVerdict({home:rec.home, away:rec.away}, result);
+          if(v==='Exact - bullseye'){ verdictClass='h-exact'; predHtml=`${rec.home}-${rec.away} ⭐`; }
+          else if(v==='Correct result'){ verdictClass='h-correct'; predHtml=`${rec.home}-${rec.away} ✓`; }
+          else { verdictClass='h-wrong'; predHtml=`${rec.home}-${rec.away} ✗`; }
+        } else {
+          predHtml = `${rec.home}-${rec.away}`;
+          verdictClass = 'h-open';
+        }
+      } else {
+        predHtml = 'No record';
+        verdictClass = 'h-none';
+      }
+      html += `<div class="history-row">
+        <span class="h-match">M${m.id}: ${m.home} vs ${m.away}</span>
+        <span class="h-pred ${verdictClass}">${predHtml}</span>
+      </div>`;
+    });
+  });
+
+  html += '</div>';
+  if(!hasContent){
+    html = '<div style="font-size:12px; color:var(--muted); text-align:center;">No matches in this window.</div>';
+  }
+  box.innerHTML = html;
+}
   const ms = visibleMatches().filter(m=>!isLocked(m) && predictions[m.id]===undefined);
   if(!ms.length){
     showToast("Nothing left to surprise you with here!");
@@ -1324,9 +1452,9 @@ async function confirmExport(){
   }
   const ms = visibleMatches();
   const ts = new Date().toISOString().replace('T',' ').slice(0,19) + " UTC";
-
-  // regenerate export text with confirmation timestamp
   const name = userName || "Player";
+
+  // Build message text
   let lines = [];
   lines.push(`*World Cup Predictions - ${name}*`);
   lines.push(`_Confirmed at: ${ts}_`);
@@ -1344,32 +1472,7 @@ async function confirmExport(){
   const text = lines.join("\n") + "\n\n" + "Don't post in the group and annoy Pri 🙏";
   document.getElementById('exportText').value = text;
 
-  // build batch payload and submit as single POST
-  const payloads = ms.filter(m=>!isLocked(m)).map(m=>{
-    const p = predictions[m.id];
-    if(!p || p.home===undefined || p.away===undefined) return null;
-    return {
-      secret: SHEET_SECRET,
-      name: name,
-      matchId: "M"+m.id,
-      home: m.home,
-      away: m.away,
-      predHome: p.home,
-      predAway: p.away
-    };
-  }).filter(Boolean);
-
-  if(payloads.length > 0){
-    submitBatchToSheet(payloads, 2).then(result=>{
-      if(!result){
-        showToast("⚠ Predictions may not have synced — tap Compose & Submit again.", 5000);
-      } else if(result.failed && result.failed.length > 0){
-        showToast(`⚠ ${result.failed.map(f=>f.matchId).join(', ')} did not save — try again.`, 5000);
-      }
-    });
-  }
-
-  // try clipboard
+  // Copy to clipboard
   let copied = false;
   try{
     await navigator.clipboard.writeText(text);
@@ -1386,7 +1489,137 @@ async function confirmExport(){
     }catch(e2){ copied = false; }
   }
   showToast(copied ? "Copied to clipboard!" : "Tap and hold the box to copy.", 2000);
+
+  // Build batch payload
+  const payloads = ms.filter(m=>!isLocked(m)).map(m=>{
+    const p = predictions[m.id];
+    if(!p || p.home===undefined || p.away===undefined) return null;
+    return {
+      secret: SHEET_SECRET,
+      name: name,
+      matchId: "M"+m.id,
+      home: m.home,
+      away: m.away,
+      predHome: p.home,
+      predAway: p.away
+    };
+  }).filter(Boolean);
+
+  if(payloads.length === 0){ render(); return; }
+
+  // Show Tamil loading messages while submitting + verifying
+  const tamilMessages = [
+    "சேட்டில் போட்டோமா பாக்குறோம்... 🔍",
+    "கோல் போட்டாயா? இல்ல ஒளிஞ்சுக்கிட்டாயா? 🤔",
+    "சர்வர் தூங்குதா இல்ல வேலை பாக்குதா... 😴",
+    "உன் prediction safe-ஆ இருக்கா பாக்குறோம்... 🙏",
+    "அம்மா கிட்ட கேக்கணும்... 😅",
+    "கொஞ்சம் பொறு, கணக்கு போடுறோம்... 🧮",
+    "WiFi-யா? Data-வா? எதுவா இருந்தாலும் போகட்டும்! 📡",
+    "Prediction சேந்துருச்சா? பாக்கலாம்... 👀"
+  ];
+
+  const header = document.querySelector('.export-header');
+  const originalLabel = header.textContent;
+  let msgIdx = Math.floor(Math.random() * tamilMessages.length);
+  header.textContent = tamilMessages[msgIdx];
+  header.style.pointerEvents = 'none';
+  const msgInterval = setInterval(()=>{
+    msgIdx = (msgIdx + 1) % tamilMessages.length;
+    header.textContent = tamilMessages[msgIdx];
+  }, 1200);
+
+  // Submit batch
+  const result = await submitBatchToSheet(payloads, 2);
+
+  // Wait a moment then verify against sheet
+  await new Promise(r=>setTimeout(r, 1500));
+
+  // Fetch what actually landed
+  let onRecord = {};
+  try{
+    const res = await fetch(SHEET_ENDPOINT + '?type=mypicks&name=' + encodeURIComponent(name));
+    const data = await res.json();
+    if(data.status === 'ok'){
+      data.picks.forEach(p=>{
+        const num = parseInt((p.matchId||'').replace(/\D/g,''), 10);
+        if(!isNaN(num)) onRecord[num] = {home:p.predHome, away:p.predAway};
+      });
+    }
+  }catch(e){
+    try{
+      onRecord = await fetchMyPicksJsonpVerify(name);
+    }catch(e2){}
+  }
+
+  clearInterval(msgInterval);
+  header.textContent = originalLabel;
+  header.style.pointerEvents = '';
+
+  // Show verification popup
+  showVerifyPopup(ms, name, onRecord);
   render();
+}
+
+function fetchMyPicksJsonpVerify(name){
+  return new Promise((resolve, reject)=>{
+    const cb = 'vpCallback_' + Date.now();
+    const script = document.createElement('script');
+    let settled = false;
+    window[cb] = function(data){
+      settled = true;
+      if(data.status === 'ok'){
+        const out = {};
+        data.picks.forEach(p=>{
+          const num = parseInt((p.matchId||'').replace(/\D/g,''), 10);
+          if(!isNaN(num)) out[num] = {home:p.predHome, away:p.predAway};
+        });
+        resolve(out);
+      } else reject(new Error('bad'));
+      delete window[cb]; script.remove();
+    };
+    script.src = SHEET_ENDPOINT + '?type=mypicks&name=' + encodeURIComponent(name) + '&callback=' + cb;
+    script.onerror = ()=>{ if(!settled){ delete window[cb]; script.remove(); reject(); } };
+    document.body.appendChild(script);
+    setTimeout(()=>{ if(!settled){ delete window[cb]; script.remove(); reject(); } }, 8000);
+  });
+}
+
+function showVerifyPopup(ms, name, onRecord){
+  const openMatches = ms.filter(m=>!isLocked(m));
+  const box = document.getElementById('verifyBox');
+  const overlay = document.getElementById('verifyOverlay');
+
+  let rows = '';
+  openMatches.forEach(m=>{
+    const rec = onRecord[m.id];
+    const p = predictions[m.id];
+    const submitted = p && p.home!==undefined && p.away!==undefined;
+    if(!submitted) return; // skip unpredicted matches
+    if(rec){
+      rows += `<div class="verify-row">
+        <span>M${m.id}: ${m.home} vs ${m.away}</span>
+        <span class="verify-ok">✅ ${rec.home}-${rec.away}</span>
+      </div>`;
+    } else {
+      rows += `<div class="verify-row">
+        <span>M${m.id}: ${m.home} vs ${m.away}</span>
+        <span class="verify-miss">⚠ Missing</span>
+      </div>`;
+    }
+  });
+
+  if(!rows){
+    rows = '<div style="color:var(--muted); text-align:center; padding:8px 0;">No open predictions to verify.</div>';
+  }
+
+  box.innerHTML = `
+    <div class="verify-title">✅ Open Predictions on Record</div>
+    <div class="verify-sub">Verified for ${name} &middot; ${new Date().toLocaleTimeString()}</div>
+    <div class="verify-list">${rows}</div>
+    <button class="verify-close" onclick="document.getElementById('verifyOverlay').classList.remove('show')">Got it 👍</button>
+  `;
+  overlay.classList.add('show');
 }
 
 // ---------- WELCOME POPUP (Vidhya) ----------
