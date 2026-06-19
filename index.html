@@ -699,6 +699,59 @@ async function saveName(){
   userName = document.getElementById('userName').value;
   document.getElementById('userName').classList.remove('missing');
   try{ await storage.set('userName', JSON.stringify(userName), false); }catch(e){}
+  // Restore all predictions from server whenever name is set/changed
+  if(userName && userName.trim()) restoreFromServer(userName.trim());
+}
+
+// ---------- RESTORE PREDICTIONS FROM SERVER ----------
+// Fetches all on-record predictions for this user and restores them locally.
+// Covers both locked and open matches — critical after cache clear.
+async function restoreFromServer(name){
+  let picks = null;
+  try{
+    const res = await fetch(SHEET_ENDPOINT + '?type=mypicks&name=' + encodeURIComponent(name));
+    const data = await res.json();
+    if(data.status === 'ok') picks = data.picks;
+  }catch(e){
+    try{ picks = await fetchMyPicksRaw(name); }catch(e2){ return; }
+  }
+  if(!picks || picks.length === 0) return;
+
+  let changed = false;
+  picks.forEach(p=>{
+    const num = parseInt((p.matchId||'').replace(/\D/g,''), 10);
+    if(isNaN(num)) return;
+    const existing = predictions[num];
+    // Only restore if local has nothing (cache cleared) or if match is locked (reconcile to truth)
+    const m = matches.find(mm=>mm.id===num);
+    const locked = m ? isLocked(m) : false;
+    if(!existing || existing.home===undefined || locked){
+      predictions[num] = {home: p.predHome, away: p.predAway};
+      changed = true;
+    }
+  });
+  if(changed){
+    await savePredictions();
+    render();
+  }
+}
+
+function fetchMyPicksRaw(name){
+  return new Promise((resolve, reject)=>{
+    const cb = 'mpRaw_' + Date.now();
+    const script = document.createElement('script');
+    let settled = false;
+    window[cb] = function(data){
+      settled = true;
+      if(data.status === 'ok') resolve(data.picks);
+      else reject();
+      delete window[cb]; script.remove();
+    };
+    script.src = SHEET_ENDPOINT + '?type=mypicks&name=' + encodeURIComponent(name) + '&callback=' + cb;
+    script.onerror = ()=>{ if(!settled){ delete window[cb]; script.remove(); reject(); } };
+    document.body.appendChild(script);
+    setTimeout(()=>{ if(!settled){ delete window[cb]; script.remove(); reject(); } }, 8000);
+  });
 }
 
 // ---------- TIME HELPERS ----------
@@ -975,6 +1028,9 @@ async function loadMyHistory(){
     box.innerHTML = '<div style="font-size:12px; color:var(--accent2); text-align:center;">Enter your name first.</div>';
     return;
   }
+
+  // Restore predictions from server silently while panel loads
+  restoreFromServer(userName.trim());
 
   // Fetch mypicks from sheet
   let onRecord = {};
@@ -1471,7 +1527,7 @@ async function confirmExport(){
     const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
     lines.push(`M${m.id}: ${m.home} vs ${m.away}: ${predStr}`);
   });
-  const text = lines.join("\n") + "\n\n" + "🙏";
+  const text = lines.join("\n") + "\n\n" + "Don't post in the group and annoy Pri 🙏";
   document.getElementById('exportText').value = text;
 
   // Copy to clipboard
@@ -1745,6 +1801,8 @@ window.onerror = function(msg, src, line){
   fetchActualResults().then(()=>render());
   reconcileLockedPredictions();
   setTimeout(showWelcomePopup, 800);
+  // If name is already stored, restore predictions from server on load
+  if(userName && userName.trim()) restoreFromServer(userName.trim());
 })();
 </script>
 </body>
