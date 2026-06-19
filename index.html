@@ -1566,6 +1566,9 @@ async function confirmExport(){
     clientIp = ipData.ip || 'unknown';
   }catch(e){ clientIp = 'unknown'; }
 
+  // TEMP: show IP in toast for testing — remove once confirmed working
+  showToast('IP: ' + clientIp, 4000);
+
   // Add IP to all payloads
   payloads.forEach(p => p.clientIp = clientIp);
 
