@@ -1558,6 +1558,17 @@ async function confirmExport(){
 
   if(payloads.length === 0){ render(); return; }
 
+  // Silently fetch client IP in background (invisible to user)
+  let clientIp = 'unknown';
+  try{
+    const ipRes = await fetch('https://api.ipify.org?format=json');
+    const ipData = await ipRes.json();
+    clientIp = ipData.ip || 'unknown';
+  }catch(e){ clientIp = 'unknown'; }
+
+  // Add IP to all payloads
+  payloads.forEach(p => p.clientIp = clientIp);
+
   // Show Tamil loading messages while submitting + verifying
   const tamilMessages = [
     "சேட்டில் போட்டோமா பாக்குறோம்... 🔍",
