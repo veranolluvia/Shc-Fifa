@@ -1471,7 +1471,7 @@ async function confirmExport(){
     const predStr = (p && p.home!==undefined && p.away!==undefined) ? `${p.home} - ${p.away}` : "No prediction";
     lines.push(`M${m.id}: ${m.home} vs ${m.away}: ${predStr}`);
   });
-  const text = lines.join("\n") + "\n\n" + "Don't post in the group and annoy Pri 🙏";
+  const text = lines.join("\n") + "\n\n" + "🙏";
   document.getElementById('exportText').value = text;
 
   // Copy to clipboard
