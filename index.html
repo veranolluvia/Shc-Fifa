@@ -1497,6 +1497,13 @@ function renderMyPicks(data){
 }
 
 async function confirmExport(){
+  // TEMP IP TEST
+  try{
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    showToast('IP test: ' + (d.ip||'no ip'), 5000);
+  }catch(e){ showToast('IP fetch failed: ' + e.message, 5000); }
+
   if(!userName || !userName.trim()){
     const nameInput = document.getElementById('userName');
     const header = document.querySelector('.export-header');
