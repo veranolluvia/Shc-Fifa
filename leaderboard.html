@@ -142,7 +142,7 @@
   .p1 .pod-pts{ color:#f5c518; } .p2 .pod-pts{ color:#0ea5e9; } .p3 .pod-pts{ color:#cd7f32; }
 
   
-  @keyframes brise{ 0%{ transform:translateY(100vh); opacity:1; } 100%{ transform:translateY(-20vh); opacity:0; } }
+   100%{ transform:translateY(-20vh); opacity:0; } }
 </style>
 </head>
 <body>
@@ -194,30 +194,7 @@
   <div class="podium-card" id="podiumCard"></div>
 </div>
 
-<div class="welcome-overlay" id="welcomeOverlay" onclick="dismissWelcome()">
-  <div class="welcome-box" onclick="event.stopPropagation()">
-    <div class="welcome-inner">
-      <span class="wchoc">&#127853;&#127853;&#127853;</span>
-      <div class="whl">New Player Alert &#128680;</div>
-      <div class="wname">Vidhya has joined!</div>
-      <div class="spin-wrap">
-        <img class="spin-img" src="" alt="Catamaran IPA">
-      </div>
-      <div class="wmsg">
-        If you top the table, enjoy your evening of<br>
-        <b>Drink All You Can &#127866;</b><br>
-        <b>@Catamaran, Pondicherry</b><br><br>
-        Just bring your vibes and your moves &#128378;<br>
-        <b>#FIFA2026 #Catamaran</b><br><br>
-        <i>Thanks Vidhya &#127853;</i>
-      </div>
-      <a class="wlink" href="https://www.instagram.com/catamaranbrewco?igsh=MW5iY3hzaHU5NGdpcQ==" target="_blank">
-        &#127866; Follow @catamaranbrewco
-      </a><br>
-      <button class="wdismiss" onclick="dismissWelcome()">Let's chase that table! &#127942;</button>
-    </div>
-  </div>
-</div>
+
 
 <script>
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
