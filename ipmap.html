@@ -3,377 +3,228 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SHC-1999-n · Prediction Map</title>
+<title>SHC Prediction Map</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-  *{ box-sizing:border-box; margin:0; padding:0; }
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    background:#071a2b; color:#f2f7fb; min-height:100vh;
-  }
-
-  /* ---------- PASSCODE GATE ---------- */
-  .gate{
-    position:fixed; inset:0; z-index:9999;
-    background:#071a2b; display:flex; align-items:center; justify-content:center;
-  }
-  .gate-box{
-    background:#0f2940; border:2px solid #2d5577; border-radius:18px;
-    padding:32px 28px; max-width:320px; width:90%; text-align:center;
-    box-shadow:0 8px 32px rgba(0,0,0,0.5);
-  }
-  .gate-icon{ font-size:48px; margin-bottom:12px; }
-  .gate-title{ font-size:18px; font-weight:800; color:#00d97e; margin-bottom:4px; }
-  .gate-sub{ font-size:12px; color:#a9c4dc; margin-bottom:20px; }
-  .gate-input{
-    width:100%; padding:12px; font-size:18px; text-align:center; font-weight:700;
-    background:#071a2b; color:#f2f7fb; border:2px solid #2d5577;
-    border-radius:10px; outline:none; letter-spacing:4px;
-    margin-bottom:12px;
-  }
-  .gate-input:focus{ border-color:#00d97e; }
-  .gate-input.error{ border-color:#ff5e3a; animation:shake 0.3s ease; }
-  @keyframes shake{
-    0%,100%{ transform:translateX(0); }
-    25%{ transform:translateX(-8px); }
-    75%{ transform:translateX(8px); }
-  }
-  .gate-btn{
-    width:100%; padding:12px; background:#00d97e; color:#071a2b;
-    border:none; border-radius:10px; font-size:15px; font-weight:800;
-    cursor:pointer;
-  }
-  .gate-error{ font-size:12px; color:#ff5e3a; margin-top:8px; min-height:16px; }
-  .topbar{
-    background:#0f2940; border-bottom:2px solid #00d97e;
-    padding:10px 16px; display:flex; align-items:center;
-    justify-content:space-between; position:sticky; top:0; z-index:1000;
-  }
-  .topbar-title{ font-size:15px; font-weight:800; color:#00d97e; }
-  .topbar-sub{ font-size:11px; color:#a9c4dc; margin-top:1px; }
-  .back-btn{
-    background:#163a57; color:#a9c4dc; border:1px solid #2d5577;
-    border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600;
-    text-decoration:none; display:inline-block;
-  }
-  .refresh-btn{
-    background:#00d97e; color:#071a2b; border:none;
-    border-radius:8px; padding:7px 12px; font-size:12px; font-weight:700;
-    cursor:pointer;
-  }
-  #map{
-    width:100%; height:calc(100vh - 54px - 120px);
-    min-height:300px;
-  }
-  .panel{
-    background:#0f2940; border-top:1px solid #2d5577;
-    padding:10px 16px; max-height:160px; overflow-y:auto;
-  }
-  .panel-title{
-    font-size:11px; font-weight:700; color:#a9c4dc; text-transform:uppercase;
-    letter-spacing:0.5px; margin-bottom:8px;
-  }
-  .ip-list{ display:flex; flex-wrap:wrap; gap:6px; }
-  .ip-chip{
-    background:#163a57; border:1px solid #2d5577; border-radius:8px;
-    padding:5px 10px; font-size:11.5px; cursor:pointer;
-    transition:background 0.15s;
-  }
-  .ip-chip:hover{ background:#00d97e22; border-color:#00d97e; }
-  .ip-chip .chip-name{ color:#00d97e; font-weight:700; }
-  .ip-chip .chip-loc{ color:#a9c4dc; font-size:10px; }
-  .loading{
-    position:fixed; inset:0; background:rgba(7,26,43,0.85);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    z-index:2000; gap:12px;
-  }
-  .loading-text{ font-size:14px; color:#a9c4dc; }
-  .loading-sub{ font-size:12px; color:#2d5577; }
-  .spinner{
-    width:36px; height:36px; border:3px solid #2d5577;
-    border-top-color:#00d97e; border-radius:50%;
-    animation:spin 0.8s linear infinite;
-  }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-  .error-box{
-    background:#1a0a0a; border:1px solid #ff5e3a; border-radius:12px;
-    padding:16px; margin:20px; font-size:13px; color:#ff8866; text-align:center;
-  }
-  .status-bar{
-    background:#0a1f35; padding:5px 16px; font-size:11px; color:#a9c4dc;
-    border-bottom:1px solid #2d5577; display:flex; justify-content:space-between;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #071a2b; color: #f2f7fb; min-height: 100vh; }
+.bar { background: #0f2940; border-bottom: 2px solid #00d97e; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.bar-title { font-size: 15px; font-weight: 800; color: #00d97e; }
+.bar-sub { font-size: 11px; color: #a9c4dc; }
+.btn-back { background: #163a57; color: #a9c4dc; border: 1px solid #2d5577; border-radius: 8px; padding: 7px 12px; font-size: 12px; text-decoration: none; }
+.btn-refresh { background: #00d97e; color: #071a2b; border: none; border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btns { display: flex; gap: 8px; }
+#map { width: 100%; height: 55vh; min-height: 280px; }
+.status { background: #0a1f35; padding: 5px 16px; font-size: 11px; color: #a9c4dc; display: flex; justify-content: space-between; border-bottom: 1px solid #2d5577; }
+.panel { background: #0f2940; border-top: 1px solid #2d5577; padding: 10px 16px; max-height: 200px; overflow-y: auto; }
+.panel-title { font-size: 11px; font-weight: 700; color: #a9c4dc; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { background: #163a57; border: 1px solid #2d5577; border-radius: 8px; padding: 5px 10px; font-size: 11.5px; cursor: pointer; }
+.chip:hover { border-color: #00d97e; }
+.chip-name { color: #00d97e; font-weight: 700; display: block; }
+.chip-loc { color: #a9c4dc; font-size: 10px; }
+.overlay { position: fixed; inset: 0; background: rgba(7,26,43,0.88); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.overlay-box { background: #0f2940; border: 2px solid #2d5577; border-radius: 16px; padding: 28px 24px; max-width: 300px; width: 90%; text-align: center; }
+.overlay-icon { font-size: 44px; margin-bottom: 10px; }
+.overlay-title { font-size: 17px; font-weight: 800; color: #00d97e; margin-bottom: 4px; }
+.overlay-sub { font-size: 12px; color: #a9c4dc; margin-bottom: 18px; }
+.gate-input { width: 100%; padding: 11px; font-size: 18px; text-align: center; font-weight: 700; background: #071a2b; color: #f2f7fb; border: 2px solid #2d5577; border-radius: 10px; outline: none; letter-spacing: 4px; margin-bottom: 10px; }
+.gate-input:focus { border-color: #00d97e; }
+.gate-input.err { border-color: #ff5e3a; }
+.gate-btn { width: 100%; padding: 11px; background: #00d97e; color: #071a2b; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; }
+.gate-err { font-size: 12px; color: #ff5e3a; margin-top: 6px; min-height: 16px; }
+.spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.spinner { width: 36px; height: 36px; border: 3px solid #2d5577; border-top-color: #00d97e; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-text { font-size: 13px; color: #a9c4dc; }
 </style>
 </head>
 <body>
 
-<!-- PASSCODE GATE -->
-<div class="gate" id="gate">
-  <div class="gate-box">
-    <div class="gate-icon">🗺️🔒</div>
-    <div class="gate-title">Admin Access</div>
-    <div class="gate-sub">SHC-1999-n Prediction Map<br>Enter passcode to continue</div>
-    <input class="gate-input" id="gateInput" type="password"
-      placeholder="••••••" maxlength="12"
-      onkeydown="if(event.key==='Enter') checkPasscode()">
-    <button class="gate-btn" onclick="checkPasscode()">Enter</button>
-    <div class="gate-error" id="gateError"></div>
+<div class="overlay" id="gate">
+  <div class="overlay-box">
+    <div class="overlay-icon">🗺️</div>
+    <div class="overlay-title">SHC Prediction Map</div>
+    <div class="overlay-sub">Admin access only — enter passcode</div>
+    <input class="gate-input" id="gateInput" type="password" placeholder="••••••" maxlength="16"
+      onkeydown="if(event.key==='Enter')checkPass()">
+    <button class="gate-btn" onclick="checkPass()">Enter</button>
+    <div class="gate-err" id="gateErr"></div>
   </div>
 </div>
 
-<div class="topbar">
+<div class="overlay" id="loadingOverlay" style="display:none;">
+  <div class="spinner-wrap">
+    <div class="spinner"></div>
+    <div class="spin-text" id="spinText">Loading...</div>
+  </div>
+</div>
+
+<div class="bar">
   <div>
-    <div class="topbar-title">⚽ SHC Prediction Map</div>
-    <div class="topbar-sub">Where are the predictors?</div>
+    <div class="bar-title">⚽ SHC Prediction Map</div>
+    <div class="bar-sub">Where are the predictors?</div>
   </div>
-  <div style="display:flex; gap:8px; align-items:center;">
-    <button class="refresh-btn" onclick="loadMap()">🔄 Refresh</button>
-    <a href="index.html" class="back-btn">⬅ Predictions</a>
+  <div class="btns">
+    <button class="btn-refresh" onclick="loadData()">🔄 Refresh</button>
+    <a href="index.html" class="btn-back">⬅ Back</a>
   </div>
 </div>
 
-<div class="status-bar">
-  <span id="statusText">Loading...</span>
-  <span id="lastUpdated"></span>
+<div class="status">
+  <span id="statusText">Waiting...</span>
+  <span id="statusTime"></span>
 </div>
 
 <div id="map"></div>
 
 <div class="panel">
   <div class="panel-title">Players Located</div>
-  <div class="ip-list" id="ipList"></div>
-</div>
-
-<div class="loading" id="loading">
-  <div class="spinner"></div>
-  <div class="loading-text">Fetching prediction locations...</div>
-  <div class="loading-sub" id="loadingStep">Connecting to sheet...</div>
+  <div class="chips" id="chips"></div>
 </div>
 
 <script>
-// ---- PASSCODE GATE ----
-const PASSCODE = "shc1999map";
+const PASS = "shc1999map";
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
+const COLORS = ['#00d97e','#ff5e3a','#4dabf7','#ffd166','#c77dff','#f72585','#4cc9f0','#fb8500','#06d6a0','#ef233c','#8338ec','#3a86ff','#ffbe0b','#ff006e','#8ac926'];
 
-function checkPasscode(){
-  const inp = document.getElementById('gateInput');
-  const err = document.getElementById('gateError');
-  if(inp.value === PASSCODE){
-    // Store in sessionStorage so refresh doesn't re-prompt within same session
-    sessionStorage.setItem('mapAccess','1');
+let map, markers = [], colorIdx = 0, playerColors = {};
+
+function col(name) {
+  if (!playerColors[name]) playerColors[name] = COLORS[colorIdx++ % COLORS.length];
+  return playerColors[name];
+}
+
+function checkPass() {
+  const v = document.getElementById('gateInput').value;
+  if (v === PASS) {
+    sessionStorage.setItem('mapOk','1');
     document.getElementById('gate').style.display = 'none';
-    initMap();
+    startMap();
   } else {
-    inp.classList.add('error');
-    err.textContent = 'Wrong passcode. Try again.';
+    const inp = document.getElementById('gateInput');
+    inp.classList.add('err');
+    document.getElementById('gateErr').textContent = 'Wrong passcode';
     inp.value = '';
-    setTimeout(()=>inp.classList.remove('error'), 400);
-    setTimeout(()=>err.textContent='', 2000);
-    inp.focus();
+    setTimeout(() => { inp.classList.remove('err'); document.getElementById('gateErr').textContent=''; }, 1500);
   }
 }
 
-// Check if already authenticated this session
-window.addEventListener('DOMContentLoaded', ()=>{
-  if(sessionStorage.getItem('mapAccess') === '1'){
-    document.getElementById('gate').style.display = 'none';
-    initMap();
-  } else {
-    document.getElementById('gateInput').focus();
-  }
-});
-
-function initMap(){
-  map = L.map('map', { zoomControl: true }).setView([20, 78], 4);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+function startMap() {
+  map = L.map('map').setView([20, 40], 3);
+  // Use OpenStreetMap tiles — bright, visible, no auth needed
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
     maxZoom: 18
   }).addTo(map);
-  loadMap();
+  loadData();
 }
 
-const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
-
-// Player colour map for markers
-const PLAYER_COLORS = [
-  '#00d97e','#ff5e3a','#4dabf7','#ffd166','#c77dff',
-  '#f72585','#4cc9f0','#fb8500','#06d6a0','#ef233c',
-  '#8338ec','#3a86ff','#ffbe0b','#ff006e','#8ac926'
-];
-
-let map = null;
-let markers = [];
-let playerColorMap = {};
-
-function getPlayerColor(name) {
-  if (!playerColorMap[name]) {
-    const idx = Object.keys(playerColorMap).length % PLAYER_COLORS.length;
-    playerColorMap[name] = PLAYER_COLORS[idx];
-  }
-  return playerColorMap[name];
-}
-
-function makeIcon(color, names) {
-  const initials = names.map(n => n[0]).join('');
-  return L.divIcon({
-    className: '',
-    html: `<div style="
-      background:${color}; color:#071a2b; font-weight:800; font-size:11px;
-      width:32px; height:32px; border-radius:50%; display:flex;
-      align-items:center; justify-content:center;
-      border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.4);
-      white-space:nowrap;
-    ">${initials.slice(0,3)}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -18]
-  });
-}
-
-async function fetchIpLog() {
-  // Try fetch first
+async function fetchIPs() {
   try {
-    const res = await fetch(SHEET_ENDPOINT + '?type=iplog');
-    const data = await res.json();
-    if (data.status === 'ok') return data.ips;
+    const r = await fetch(ENDPOINT + '?type=iplog');
+    const d = await r.json();
+    if (d.status === 'ok') return d.ips;
   } catch(e) {}
   // JSONP fallback
-  return await new Promise((resolve, reject) => {
-    const cb = 'iplogCb_' + Date.now();
-    const script = document.createElement('script');
-    let settled = false;
-    window[cb] = function(data) {
-      settled = true;
-      if (data.status === 'ok') resolve(data.ips);
-      else reject(new Error('bad response'));
-      delete window[cb]; script.remove();
-    };
-    script.src = SHEET_ENDPOINT + '?type=iplog&callback=' + cb;
-    script.onerror = () => { if(!settled){ delete window[cb]; script.remove(); reject(); } };
-    document.body.appendChild(script);
-    setTimeout(() => { if(!settled){ delete window[cb]; script.remove(); reject(new Error('timeout')); } }, 10000);
+  return new Promise((res, rej) => {
+    const cb = 'ipcb_' + Date.now();
+    const s = document.createElement('script');
+    let done = false;
+    window[cb] = d => { done=true; if(d.status==='ok') res(d.ips); else rej(); delete window[cb]; s.remove(); };
+    s.src = ENDPOINT + '?type=iplog&callback=' + cb;
+    s.onerror = () => { if(!done){ delete window[cb]; s.remove(); rej(); } };
+    document.body.appendChild(s);
+    setTimeout(() => { if(!done){ delete window[cb]; s.remove(); rej(); } }, 10000);
   });
 }
 
-async function geolocateIPs(ipList) {
-  // ip-api.com doesn't support HTTPS on free tier for batch
-  // Use ipapi.co which supports HTTPS — one request per IP, max concurrency 5
-  const results = await Promise.all(ipList.map(async item => {
-    try {
-      const res = await fetch(`https://ipapi.co/${item.ip}/json/`);
-      const d = await res.json();
-      if (d.error) return { status: 'fail', query: item.ip };
-      return {
-        status: 'success',
-        query: item.ip,
-        country: d.country_name,
-        regionName: d.region,
-        city: d.city,
-        lat: d.latitude,
-        lon: d.longitude,
-        isp: d.org
-      };
-    } catch(e) {
-      return { status: 'fail', query: item.ip };
-    }
-  }));
-  return results;
+async function geoIP(ip) {
+  try {
+    const r = await fetch('https://ipapi.co/' + ip + '/json/');
+    const d = await r.json();
+    if (d.error || !d.latitude) return null;
+    return { lat: d.latitude, lon: d.longitude, city: d.city, country: d.country_name, isp: d.org };
+  } catch(e) { return null; }
 }
 
-async function loadMap() {
-  document.getElementById('loading').style.display = 'flex';
-  document.getElementById('loadingStep').textContent = 'Connecting to sheet...';
+async function loadData() {
+  const loading = document.getElementById('loadingOverlay');
+  const spinText = document.getElementById('spinText');
+  loading.style.display = 'flex';
+  spinText.textContent = 'Fetching IPs from sheet...';
 
-  // Clear existing markers
+  // Clear old markers
   markers.forEach(m => map.removeLayer(m));
   markers = [];
-  document.getElementById('ipList').innerHTML = '';
+  document.getElementById('chips').innerHTML = '';
 
   try {
-    // Step 1: fetch IP log from sheet
-    document.getElementById('loadingStep').textContent = 'Fetching prediction IPs...';
-    const ipEntries = await fetchIpLog();
-
-    if (!ipEntries || ipEntries.length === 0) {
-      document.getElementById('statusText').textContent = 'No IP data found yet — submit predictions first.';
-      document.getElementById('loading').style.display = 'none';
+    const ips = await fetchIPs();
+    if (!ips || ips.length === 0) {
+      document.getElementById('statusText').textContent = 'No IP data yet — submit predictions first';
+      loading.style.display = 'none';
       return;
     }
 
-    document.getElementById('loadingStep').textContent = `Geolocating ${ipEntries.length} unique IP(s)...`;
+    spinText.textContent = 'Geolocating ' + ips.length + ' IP(s)...';
 
-    // Step 2: geolocate all IPs
-    const geoResults = await geolocateIPs(ipEntries);
-
-    // Step 3: build a name lookup map
-    const ipToNames = {};
-    ipEntries.forEach(e => { ipToNames[e.ip] = e.names; });
-
-    // Step 4: plot markers
-    let located = 0;
-    const chipHtml = [];
     const bounds = [];
+    let located = 0;
+    const chipsHtml = [];
 
-    geoResults.forEach(geo => {
-      if (geo.status !== 'success') return;
-      const names = ipToNames[geo.query] || ipToNames[geo.query.trim()] || ['Unknown'];
-      const color = getPlayerColor(names[0]);
+    // Process one at a time to avoid rate limiting
+    for (const entry of ips) {
+      const geo = await geoIP(entry.ip);
+      if (!geo) continue;
+
+      const names = entry.names || ['Unknown'];
       const label = names.join(' & ');
-      const loc = `${geo.city}, ${geo.regionName}, ${geo.country}`;
+      const c = col(names[0]);
+      const initials = names.map(n => n[0]).slice(0, 2).join('');
 
-      // Marker
-      const icon = makeIcon(color, names);
-      const marker = L.marker([geo.lat, geo.lon], { icon })
-        .bindPopup(`
-          <div style="font-family:sans-serif; min-width:160px;">
-            <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${label}</div>
-            <div style="font-size:11px; color:#666;">${loc}</div>
-            <div style="font-size:10px; color:#999; margin-top:3px;">ISP: ${geo.isp}</div>
-            <div style="font-size:10px; color:#999;">IP: ${geo.query}</div>
-          </div>
-        `)
-        .addTo(map);
+      const icon = L.divIcon({
+        className: '',
+        html: '<div style="background:' + c + ';color:#071a2b;font-weight:800;font-size:11px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);">' + initials + '</div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
+        popupAnchor: [0, -20]
+      });
+
+      const popup = '<b style="font-size:14px;">' + label + '</b><br><span style="font-size:11px;color:#555;">' + (geo.city||'') + ', ' + (geo.country||'') + '</span><br><span style="font-size:10px;color:#888;">' + (geo.isp||'') + '</span><br><span style="font-size:10px;color:#aaa;">' + entry.ip + '</span>';
+
+      const marker = L.marker([geo.lat, geo.lon], { icon }).bindPopup(popup).addTo(map);
       markers.push(marker);
       bounds.push([geo.lat, geo.lon]);
       located++;
 
-      // Chip
-      chipHtml.push(`
-        <div class="ip-chip" onclick="focusMarker(${geo.lat},${geo.lon})">
-          <span class="chip-name" style="color:${color}">${label}</span>
-          <div class="chip-loc">${geo.city}, ${geo.country}</div>
-        </div>
-      `);
-    });
-
-    document.getElementById('ipList').innerHTML = chipHtml.join('');
-
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+      chipsHtml.push('<div class="chip" onclick="map.setView([' + geo.lat + ',' + geo.lon + '],8);markers[' + (markers.length-1) + '].openPopup();"><span class="chip-name" style="color:' + c + '">' + label + '</span><span class="chip-loc">' + (geo.city||'') + ', ' + (geo.country||'') + '</span></div>');
     }
 
-    document.getElementById('statusText').textContent =
-      `${located} location(s) plotted from ${ipEntries.length} unique IP(s)`;
-    document.getElementById('lastUpdated').textContent =
-      'Updated: ' + new Date().toLocaleTimeString();
+    document.getElementById('chips').innerHTML = chipsHtml.join('');
 
-  } catch(err) {
-    document.getElementById('statusText').textContent = 'Error: ' + (err.message || 'Could not load data');
-    console.error(err);
+    if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+
+    document.getElementById('statusText').textContent = located + ' location(s) plotted from ' + ips.length + ' unique IP(s)';
+    document.getElementById('statusTime').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+  } catch(e) {
+    document.getElementById('statusText').textContent = 'Error loading data: ' + (e.message || e);
   }
 
-  document.getElementById('loading').style.display = 'none';
+  loading.style.display = 'none';
 }
 
-function focusMarker(lat, lon) {
-  map.setView([lat, lon], 10, { animate: true });
-  markers.forEach(m => {
-    const ll = m.getLatLng();
-    if (Math.abs(ll.lat - lat) < 0.01 && Math.abs(ll.lng - lon) < 0.01) {
-      m.openPopup();
-    }
-  });
-}
+// On load
+window.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('mapOk') === '1') {
+    document.getElementById('gate').style.display = 'none';
+    startMap();
+  } else {
+    setTimeout(() => document.getElementById('gateInput').focus(), 100);
+  }
+});
 </script>
 </body>
 </html>
