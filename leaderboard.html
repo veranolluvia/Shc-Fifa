@@ -430,10 +430,7 @@ document.addEventListener('touchend', e=>{
 function showFlipMessage(msg, emoji, duration, cb){
   const div = document.createElement('div');
   div.className = 'flip-msg';
-  div.innerHTML = \`<div class="flip-msg-inner">
-    <span class="flip-msg-emoji">\${emoji}</span>
-    <div class="flip-msg-text">\${msg}</div>
-  </div>\`;
+  div.innerHTML = '<div class="flip-msg-inner"><span class="flip-msg-emoji">'+emoji+'</span><div class="flip-msg-text">'+msg+'</div></div>';
   document.body.appendChild(div);
   setTimeout(()=>{
     div.style.transition = 'opacity 0.4s';
