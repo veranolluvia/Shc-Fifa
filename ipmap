@@ -12,6 +12,40 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     background:#071a2b; color:#f2f7fb; min-height:100vh;
   }
+
+  /* ---------- PASSCODE GATE ---------- */
+  .gate{
+    position:fixed; inset:0; z-index:9999;
+    background:#071a2b; display:flex; align-items:center; justify-content:center;
+  }
+  .gate-box{
+    background:#0f2940; border:2px solid #2d5577; border-radius:18px;
+    padding:32px 28px; max-width:320px; width:90%; text-align:center;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  }
+  .gate-icon{ font-size:48px; margin-bottom:12px; }
+  .gate-title{ font-size:18px; font-weight:800; color:#00d97e; margin-bottom:4px; }
+  .gate-sub{ font-size:12px; color:#a9c4dc; margin-bottom:20px; }
+  .gate-input{
+    width:100%; padding:12px; font-size:18px; text-align:center; font-weight:700;
+    background:#071a2b; color:#f2f7fb; border:2px solid #2d5577;
+    border-radius:10px; outline:none; letter-spacing:4px;
+    margin-bottom:12px;
+  }
+  .gate-input:focus{ border-color:#00d97e; }
+  .gate-input.error{ border-color:#ff5e3a; animation:shake 0.3s ease; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-8px); }
+    75%{ transform:translateX(8px); }
+  }
+  .gate-btn{
+    width:100%; padding:12px; background:#00d97e; color:#071a2b;
+    border:none; border-radius:10px; font-size:15px; font-weight:800;
+    cursor:pointer;
+  }
+  .gate-error{ font-size:12px; color:#ff5e3a; margin-top:8px; min-height:16px; }
+</style>
   .topbar{
     background:#0f2940; border-bottom:2px solid #00d97e;
     padding:10px 16px; display:flex; align-items:center;
@@ -75,6 +109,20 @@
 </head>
 <body>
 
+<!-- PASSCODE GATE -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <div class="gate-icon">🗺️🔒</div>
+    <div class="gate-title">Admin Access</div>
+    <div class="gate-sub">SHC-1999-n Prediction Map<br>Enter passcode to continue</div>
+    <input class="gate-input" id="gateInput" type="password"
+      placeholder="••••••" maxlength="12"
+      onkeydown="if(event.key==='Enter') checkPasscode()">
+    <button class="gate-btn" onclick="checkPasscode()">Enter</button>
+    <div class="gate-error" id="gateError"></div>
+  </div>
+</div>
+
 <div class="topbar">
   <div>
     <div class="topbar-title">⚽ SHC Prediction Map</div>
@@ -105,6 +153,46 @@
 </div>
 
 <script>
+// ---- PASSCODE GATE ----
+const PASSCODE = "shc1999map";
+
+function checkPasscode(){
+  const inp = document.getElementById('gateInput');
+  const err = document.getElementById('gateError');
+  if(inp.value === PASSCODE){
+    // Store in sessionStorage so refresh doesn't re-prompt within same session
+    sessionStorage.setItem('mapAccess','1');
+    document.getElementById('gate').style.display = 'none';
+    initMap();
+  } else {
+    inp.classList.add('error');
+    err.textContent = 'Wrong passcode. Try again.';
+    inp.value = '';
+    setTimeout(()=>inp.classList.remove('error'), 400);
+    setTimeout(()=>err.textContent='', 2000);
+    inp.focus();
+  }
+}
+
+// Check if already authenticated this session
+window.addEventListener('DOMContentLoaded', ()=>{
+  if(sessionStorage.getItem('mapAccess') === '1'){
+    document.getElementById('gate').style.display = 'none';
+    initMap();
+  } else {
+    document.getElementById('gateInput').focus();
+  }
+});
+
+function initMap(){
+  map = L.map('map', { zoomControl: true }).setView([20, 78], 4);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    maxZoom: 18
+  }).addTo(map);
+  loadMap();
+}
+
 const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
 
 // Player colour map for markers
@@ -169,14 +257,28 @@ async function fetchIpLog() {
 }
 
 async function geolocateIPs(ipList) {
-  // ip-api.com bulk endpoint — free, no key needed, max 100 IPs per request
-  const payload = ipList.map(item => ({ query: item.ip }));
-  const res = await fetch('http://ip-api.com/batch?fields=status,query,country,regionName,city,lat,lon,isp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  return await res.json();
+  // ip-api.com doesn't support HTTPS on free tier for batch
+  // Use ipapi.co which supports HTTPS — one request per IP, max concurrency 5
+  const results = await Promise.all(ipList.map(async item => {
+    try {
+      const res = await fetch(`https://ipapi.co/${item.ip}/json/`);
+      const d = await res.json();
+      if (d.error) return { status: 'fail', query: item.ip };
+      return {
+        status: 'success',
+        query: item.ip,
+        country: d.country_name,
+        regionName: d.region,
+        city: d.city,
+        lat: d.latitude,
+        lon: d.longitude,
+        isp: d.org
+      };
+    } catch(e) {
+      return { status: 'fail', query: item.ip };
+    }
+  }));
+  return results;
 }
 
 async function loadMap() {
@@ -215,7 +317,7 @@ async function loadMap() {
 
     geoResults.forEach(geo => {
       if (geo.status !== 'success') return;
-      const names = ipToNames[geo.query] || ['Unknown'];
+      const names = ipToNames[geo.query] || ipToNames[geo.query.trim()] || ['Unknown'];
       const color = getPlayerColor(names[0]);
       const label = names.join(' & ');
       const loc = `${geo.city}, ${geo.regionName}, ${geo.country}`;
@@ -273,16 +375,6 @@ function focusMarker(lat, lon) {
     }
   });
 }
-
-// Init map
-window.addEventListener('DOMContentLoaded', () => {
-  map = L.map('map', { zoomControl: true }).setView([20, 78], 4);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    maxZoom: 18
-  }).addTo(map);
-  loadMap();
-});
 </script>
 </body>
 </html>
