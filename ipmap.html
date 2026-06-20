@@ -141,12 +141,34 @@ async function fetchIPs() {
 }
 
 async function geoIP(ip) {
+  // Try ipapi.co first
   try {
     const r = await fetch('https://ipapi.co/' + ip + '/json/');
     const d = await r.json();
-    if (d.error || !d.latitude) return null;
-    return { lat: d.latitude, lon: d.longitude, city: d.city, country: d.country_name, isp: d.org };
-  } catch(e) { return null; }
+    if (!d.error && d.latitude && d.longitude) {
+      return { lat: d.latitude, lon: d.longitude, city: d.city, country: d.country_name, isp: d.org };
+    }
+  } catch(e) {}
+  // Fallback: try ip-api.com (HTTP — may be blocked on HTTPS pages but worth trying)
+  try {
+    const r2 = await fetch('https://ipwho.is/' + ip);
+    const d2 = await r2.json();
+    if (d2.success && d2.latitude) {
+      return { lat: d2.latitude, lon: d2.longitude, city: d2.city, country: d2.country, isp: d2.connection?.isp || '' };
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function geolocateAll(ips) {
+  const results = [];
+  for (const entry of ips) {
+    const geo = await geoIP(entry.ip);
+    results.push({ entry, geo });
+    // 1.1s delay between requests to avoid rate limiting
+    await new Promise(r => setTimeout(r, 1100));
+  }
+  return results;
 }
 
 async function loadData() {
@@ -174,10 +196,13 @@ async function loadData() {
     let located = 0;
     const chipsHtml = [];
 
-    // Process one at a time to avoid rate limiting
-    for (const entry of ips) {
-      const geo = await geoIP(entry.ip);
-      if (!geo) continue;
+    const geoResults = await geolocateAll(ips);
+
+    for (const { entry, geo } of geoResults) {
+      if (!geo) {
+        chipsHtml.push('<div class="chip"><span class="chip-name" style="color:#ff5e3a">' + (entry.names||['?']).join(' & ') + '</span><span class="chip-loc">Could not locate: ' + entry.ip + '</span></div>');
+        continue;
+      }
 
       const names = entry.names || ['Unknown'];
       const label = names.join(' & ');
@@ -187,9 +212,7 @@ async function loadData() {
       const icon = L.divIcon({
         className: '',
         html: '<div style="background:' + c + ';color:#071a2b;font-weight:800;font-size:11px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);">' + initials + '</div>',
-        iconSize: [34, 34],
-        iconAnchor: [17, 17],
-        popupAnchor: [0, -20]
+        iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20]
       });
 
       const popup = '<b style="font-size:14px;">' + label + '</b><br><span style="font-size:11px;color:#555;">' + (geo.city||'') + ', ' + (geo.country||'') + '</span><br><span style="font-size:10px;color:#888;">' + (geo.isp||'') + '</span><br><span style="font-size:10px;color:#aaa;">' + entry.ip + '</span>';
