@@ -381,6 +381,43 @@
   .h-wrong{ color:var(--red); }
   .h-open{ color:var(--accent); }
   .h-none{ color:var(--muted); font-style:italic; }
+  /* ---------- DICE POPUP ---------- */
+  .dice-overlay{
+    position:fixed; inset:0; z-index:450; display:none;
+    align-items:center; justify-content:center;
+    background:rgba(5,15,29,0.75);
+  }
+  .dice-overlay.show{ display:flex; }
+  .dice-box{
+    background:var(--card); border-radius:20px; padding:28px 24px;
+    max-width:300px; width:88%; text-align:center;
+    border:1px solid var(--line);
+    animation:dice-pop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  }
+  @keyframes dice-pop{
+    0%{ transform:scale(0.4) rotate(-15deg); opacity:0; }
+    100%{ transform:scale(1) rotate(0deg); opacity:1; }
+  }
+  .dice-emoji{
+    font-size:64px; display:block; margin-bottom:10px;
+    animation:dice-spin 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes dice-spin{
+    0%{ transform:rotate(-20deg) scale(0.9); }
+    100%{ transform:rotate(20deg) scale(1.1); }
+  }
+  .dice-title{ font-size:18px; font-weight:900; color:var(--text); margin-bottom:6px; }
+  .dice-sub{ font-size:12px; color:var(--muted); margin-bottom:18px; line-height:1.5; }
+  .dice-btns{ display:flex; gap:10px; }
+  .dice-yes{
+    flex:1; padding:12px; background:var(--accent); color:var(--bg);
+    border:none; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer;
+  }
+  .dice-no{
+    flex:1; padding:12px; background:var(--card2); color:var(--muted);
+    border:1px solid var(--line); border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -417,6 +454,18 @@
   <div class="anim-overlay" id="animOverlay"></div>
   <div class="verify-overlay" id="verifyOverlay">
     <div class="verify-box" id="verifyBox"></div>
+  </div>
+
+  <div class="dice-overlay" id="diceOverlay">
+    <div class="dice-box">
+      <span class="dice-emoji">🎲</span>
+      <div class="dice-title">Roll the dice?</div>
+      <div class="dice-sub">Fill in random predictions for all open matches in this window.</div>
+      <div class="dice-btns">
+        <button class="dice-no" onclick="closeDicePopup()">Nah</button>
+        <button class="dice-yes" onclick="confirmDiceRoll()">Roll it! 🎲</button>
+      </div>
+    </div>
   </div>
   <div class="keypad-overlay" id="keypadOverlay" onclick="closeKeypad()">
     <div class="keypad-box" onclick="event.stopPropagation()">
@@ -1099,6 +1148,34 @@ async function loadMyHistory(){
     html = '<div style="font-size:12px; color:var(--muted); text-align:center;">No matches in this window.</div>';
   }
   box.innerHTML = html;
+}
+
+// ---------- DOUBLE TAP → DICE ----------
+let lastTap = 0;
+document.addEventListener('touchend', e => {
+  // Ignore taps on buttons, inputs, links and overlays
+  const tag = e.target.tagName;
+  if (['BUTTON','INPUT','A','SELECT'].includes(tag)) return;
+  if (e.target.closest('.keypad-overlay,.really-overlay,.dice-overlay,.verify-overlay,.welcome-overlay,.anim-overlay')) return;
+
+  const now = Date.now();
+  const gap = now - lastTap;
+  lastTap = now;
+  if (gap < 300 && gap > 30) {
+    // Double tap detected
+    showDicePopup();
+  }
+}, { passive: true });
+
+function showDicePopup(){
+  document.getElementById('diceOverlay').classList.add('show');
+}
+function closeDicePopup(){
+  document.getElementById('diceOverlay').classList.remove('show');
+}
+function confirmDiceRoll(){
+  closeDicePopup();
+  playAnimThen('dice', surpriseMe);
 }
 
 function surpriseMe(){
