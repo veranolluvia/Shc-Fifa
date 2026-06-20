@@ -15,15 +15,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 .btn-back { background: #163a57; color: #a9c4dc; border: 1px solid #2d5577; border-radius: 8px; padding: 7px 12px; font-size: 12px; text-decoration: none; }
 .btn-refresh { background: #00d97e; color: #071a2b; border: none; border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .btns { display: flex; gap: 8px; }
-#map { width: 100%; height: 55vh; min-height: 280px; }
+#map { width: 100%; height: 52vh; min-height: 260px; }
 .status { background: #0a1f35; padding: 5px 16px; font-size: 11px; color: #a9c4dc; display: flex; justify-content: space-between; border-bottom: 1px solid #2d5577; }
-.panel { background: #0f2940; border-top: 1px solid #2d5577; padding: 10px 16px; max-height: 200px; overflow-y: auto; }
+.panel { background: #0f2940; border-top: 1px solid #2d5577; padding: 10px 16px; max-height: 220px; overflow-y: auto; }
 .panel-title { font-size: 11px; font-weight: 700; color: #a9c4dc; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { background: #163a57; border: 1px solid #2d5577; border-radius: 8px; padding: 5px 10px; font-size: 11.5px; cursor: pointer; }
+.chips { display: flex; flex-direction: column; gap: 6px; }
+.chip { background: #163a57; border: 1px solid #2d5577; border-radius: 10px; padding: 8px 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
 .chip:hover { border-color: #00d97e; }
-.chip-name { color: #00d97e; font-weight: 700; display: block; }
-.chip-loc { color: #a9c4dc; font-size: 10px; }
+.chip-left { display: flex; flex-direction: column; gap: 2px; }
+.chip-name { font-weight: 700; font-size: 12.5px; }
+.chip-ip { color: #a9c4dc; font-size: 10px; font-family: monospace; }
+.chip-loc { color: #a9c4dc; font-size: 10.5px; }
+.chip-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.chip-ping { font-size: 10px; color: #a9c4dc; }
+.chip-btn { background: #00d97e22; border: 1px solid #00d97e44; border-radius: 6px; padding: 3px 8px; font-size: 10px; color: #00d97e; cursor: pointer; white-space: nowrap; }
+.chip-btn.loading { color: #a9c4dc; border-color: #2d5577; background: transparent; }
+.chip.located { border-color: #00d97e33; }
+.chip.failed { border-color: #ff5e3a44; }
 .overlay { position: fixed; inset: 0; background: rgba(7,26,43,0.88); display: flex; align-items: center; justify-content: center; z-index: 9999; }
 .overlay-box { background: #0f2940; border: 2px solid #2d5577; border-radius: 16px; padding: 28px 24px; max-width: 300px; width: 90%; text-align: center; }
 .overlay-icon { font-size: 44px; margin-bottom: 10px; }
@@ -34,10 +42,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 .gate-input.err { border-color: #ff5e3a; }
 .gate-btn { width: 100%; padding: 11px; background: #00d97e; color: #071a2b; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; }
 .gate-err { font-size: 12px; color: #ff5e3a; margin-top: 6px; min-height: 16px; }
-.spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.spinner { width: 36px; height: 36px; border: 3px solid #2d5577; border-top-color: #00d97e; border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.spin-text { font-size: 13px; color: #a9c4dc; }
 </style>
 </head>
 <body>
@@ -46,7 +50,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
   <div class="overlay-box">
     <div class="overlay-icon">🗺️</div>
     <div class="overlay-title">SHC Prediction Map</div>
-    <div class="overlay-sub">Admin access only — enter passcode</div>
+    <div class="overlay-sub">Admin access only</div>
     <input class="gate-input" id="gateInput" type="password" placeholder="••••••" maxlength="16"
       onkeydown="if(event.key==='Enter')checkPass()">
     <button class="gate-btn" onclick="checkPass()">Enter</button>
@@ -54,20 +58,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
   </div>
 </div>
 
-<div class="overlay" id="loadingOverlay" style="display:none;">
-  <div class="spinner-wrap">
-    <div class="spinner"></div>
-    <div class="spin-text" id="spinText">Loading...</div>
-  </div>
-</div>
-
 <div class="bar">
   <div>
     <div class="bar-title">⚽ SHC Prediction Map</div>
-    <div class="bar-sub">Where are the predictors?</div>
+    <div class="bar-sub">Tap a name to locate · cached instantly</div>
   </div>
   <div class="btns">
-    <button class="btn-refresh" onclick="loadData()">🔄 Refresh</button>
+    <button class="btn-refresh" onclick="refreshIPList()">🔄 Sync IPs</button>
     <a href="index.html" class="btn-back">⬅ Back</a>
   </div>
 </div>
@@ -80,58 +77,64 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 <div id="map"></div>
 
 <div class="panel">
-  <div class="panel-title">Players Located</div>
+  <div class="panel-title">Players — tap to locate / re-ping</div>
   <div class="chips" id="chips"></div>
 </div>
 
 <script>
 const PASS = "shc1999map";
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbxC_Xsx_0ffVWpJRZOLXIS0Kr6H9MST4QMw8wBEuGJSifTebg22Qpl4SDsX4BMexM8/exec";
+const CACHE_KEY = "shcIpGeoCache";
 const COLORS = ['#00d97e','#ff5e3a','#4dabf7','#ffd166','#c77dff','#f72585','#4cc9f0','#fb8500','#06d6a0','#ef233c','#8338ec','#3a86ff','#ffbe0b','#ff006e','#8ac926'];
 
-let map, markers = [], colorIdx = 0, playerColors = {};
+let map, markers = {}, colorIdx = 0, playerColors = {}, ipEntries = [];
 
+// ---- CACHE ----
+function loadCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveCache(cache) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch(e) {}
+}
+
+// ---- COLOUR ----
 function col(name) {
   if (!playerColors[name]) playerColors[name] = COLORS[colorIdx++ % COLORS.length];
   return playerColors[name];
 }
 
+// ---- PASSCODE ----
 function checkPass() {
-  const v = document.getElementById('gateInput').value;
-  if (v === PASS) {
+  if (document.getElementById('gateInput').value === PASS) {
     sessionStorage.setItem('mapOk','1');
     document.getElementById('gate').style.display = 'none';
     startMap();
   } else {
     const inp = document.getElementById('gateInput');
-    inp.classList.add('err');
+    inp.classList.add('err'); inp.value = '';
     document.getElementById('gateErr').textContent = 'Wrong passcode';
-    inp.value = '';
     setTimeout(() => { inp.classList.remove('err'); document.getElementById('gateErr').textContent=''; }, 1500);
   }
 }
 
+// ---- MAP INIT ----
 function startMap() {
   map = L.map('map').setView([20, 40], 3);
-  // Use OpenStreetMap tiles — bright, visible, no auth needed
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 18
+    attribution: '© OpenStreetMap contributors', maxZoom: 18
   }).addTo(map);
-  loadData();
+  refreshIPList();
 }
 
+// ---- FETCH IP LIST FROM SHEET ----
 async function fetchIPs() {
   try {
     const r = await fetch(ENDPOINT + '?type=iplog');
     const d = await r.json();
     if (d.status === 'ok') return d.ips;
   } catch(e) {}
-  // JSONP fallback
   return new Promise((res, rej) => {
-    const cb = 'ipcb_' + Date.now();
-    const s = document.createElement('script');
-    let done = false;
+    const cb = 'ipcb_' + Date.now(); const s = document.createElement('script'); let done = false;
     window[cb] = d => { done=true; if(d.status==='ok') res(d.ips); else rej(); delete window[cb]; s.remove(); };
     s.src = ENDPOINT + '?type=iplog&callback=' + cb;
     s.onerror = () => { if(!done){ delete window[cb]; s.remove(); rej(); } };
@@ -140,106 +143,143 @@ async function fetchIPs() {
   });
 }
 
+async function refreshIPList() {
+  document.getElementById('statusText').textContent = 'Syncing IP list from sheet...';
+  try {
+    ipEntries = await fetchIPs();
+  } catch(e) {
+    document.getElementById('statusText').textContent = 'Could not reach sheet — using cached data';
+    ipEntries = [];
+  }
+
+  // Merge with cached geo data and render chips
+  const cache = loadCache();
+  renderChips(ipEntries, cache);
+  // Plot any already-cached locations
+  plotCached(ipEntries, cache);
+
+  const located = Object.keys(cache).length;
+  document.getElementById('statusText').textContent = `${ipEntries.length} IP(s) found · ${located} located · tap name to ping`;
+  document.getElementById('statusTime').textContent = new Date().toLocaleTimeString();
+}
+
+// ---- RENDER CHIPS ----
+function renderChips(entries, cache) {
+  const box = document.getElementById('chips');
+  if (!entries.length) {
+    box.innerHTML = '<div style="color:#a9c4dc;font-size:12px;">No IPs found yet — submit predictions first.</div>';
+    return;
+  }
+  box.innerHTML = entries.map(entry => {
+    const names = (entry.names || ['Unknown']).join(' & ');
+    const c = col((entry.names||['?'])[0]);
+    const geo = cache[entry.ip];
+    const locText = geo ? `${geo.city||''}, ${geo.country||''}` : 'Not yet located';
+    const pingText = geo ? `Last pinged: ${geo.pingedAt||'?'}` : '';
+    const chipCls = geo ? 'chip located' : (geo===null ? 'chip failed' : 'chip');
+    return `<div class="${chipCls}" id="chip-${entry.ip.replace(/\./g,'_')}">
+      <div class="chip-left">
+        <span class="chip-name" style="color:${c}">${names}</span>
+        <span class="chip-ip">${entry.ip}</span>
+        <span class="chip-loc">${locText}</span>
+      </div>
+      <div class="chip-right">
+        <span class="chip-ping">${pingText}</span>
+        <button class="chip-btn" onclick="pingOne('${entry.ip}',${JSON.stringify(entry.names||['?'])})" id="btn-${entry.ip.replace(/\./g,'_')}">
+          ${geo ? '🔄 Re-ping' : '📍 Locate'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- PLOT CACHED LOCATIONS ----
+function plotCached(entries, cache) {
+  entries.forEach(entry => {
+    const geo = cache[entry.ip];
+    if (geo && geo.lat) plotMarker(entry.ip, entry.names||['?'], geo);
+  });
+  const bounds = Object.values(cache).filter(g=>g&&g.lat).map(g=>[g.lat,g.lon]);
+  if (bounds.length > 0) map.fitBounds(bounds, { padding: [40,40], maxZoom: 8 });
+}
+
+// ---- GEO LOOKUP (single IP, with fallback) ----
 async function geoIP(ip) {
-  // Try ipapi.co first
+  // Try ipapi.co
   try {
     const r = await fetch('https://ipapi.co/' + ip + '/json/');
     const d = await r.json();
-    if (!d.error && d.latitude && d.longitude) {
-      return { lat: d.latitude, lon: d.longitude, city: d.city, country: d.country_name, isp: d.org };
-    }
+    if (!d.error && d.latitude) return { lat: d.latitude, lon: d.longitude, city: d.city, country: d.country_name, isp: d.org };
   } catch(e) {}
-  // Fallback: try ip-api.com (HTTP — may be blocked on HTTPS pages but worth trying)
+  // Fallback: ipwho.is
   try {
     const r2 = await fetch('https://ipwho.is/' + ip);
     const d2 = await r2.json();
-    if (d2.success && d2.latitude) {
-      return { lat: d2.latitude, lon: d2.longitude, city: d2.city, country: d2.country, isp: d2.connection?.isp || '' };
-    }
+    if (d2.success && d2.latitude) return { lat: d2.latitude, lon: d2.longitude, city: d2.city, country: d2.country, isp: d2.connection?.isp||'' };
   } catch(e) {}
   return null;
 }
 
-async function geolocateAll(ips) {
-  const results = [];
-  for (const entry of ips) {
-    const geo = await geoIP(entry.ip);
-    results.push({ entry, geo });
-    // 1.1s delay between requests to avoid rate limiting
-    await new Promise(r => setTimeout(r, 1100));
-  }
-  return results;
-}
+// ---- PING ONE IP ----
+async function pingOne(ip, names) {
+  const safeIp = ip.replace(/\./g,'_');
+  const btn = document.getElementById('btn-'+safeIp);
+  const chip = document.getElementById('chip-'+safeIp);
+  if (btn) { btn.textContent = '⏳ Pinging...'; btn.classList.add('loading'); btn.disabled = true; }
 
-async function loadData() {
-  const loading = document.getElementById('loadingOverlay');
-  const spinText = document.getElementById('spinText');
-  loading.style.display = 'flex';
-  spinText.textContent = 'Fetching IPs from sheet...';
+  const geo = await geoIP(ip);
+  const cache = loadCache();
 
-  // Clear old markers
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
-  document.getElementById('chips').innerHTML = '';
-
-  try {
-    const ips = await fetchIPs();
-    if (!ips || ips.length === 0) {
-      document.getElementById('statusText').textContent = 'No IP data yet — submit predictions first';
-      loading.style.display = 'none';
-      return;
-    }
-
-    spinText.textContent = 'Geolocating ' + ips.length + ' IP(s)...';
-
-    const bounds = [];
-    let located = 0;
-    const chipsHtml = [];
-
-    const geoResults = await geolocateAll(ips);
-
-    for (const { entry, geo } of geoResults) {
-      if (!geo) {
-        chipsHtml.push('<div class="chip"><span class="chip-name" style="color:#ff5e3a">' + (entry.names||['?']).join(' & ') + '</span><span class="chip-loc">Could not locate: ' + entry.ip + '</span></div>');
-        continue;
-      }
-
-      const names = entry.names || ['Unknown'];
-      const label = names.join(' & ');
-      const c = col(names[0]);
-      const initials = names.map(n => n[0]).slice(0, 2).join('');
-
-      const icon = L.divIcon({
-        className: '',
-        html: '<div style="background:' + c + ';color:#071a2b;font-weight:800;font-size:11px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);">' + initials + '</div>',
-        iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20]
-      });
-
-      const popup = '<b style="font-size:14px;">' + label + '</b><br><span style="font-size:11px;color:#555;">' + (geo.city||'') + ', ' + (geo.country||'') + '</span><br><span style="font-size:10px;color:#888;">' + (geo.isp||'') + '</span><br><span style="font-size:10px;color:#aaa;">' + entry.ip + '</span>';
-
-      const marker = L.marker([geo.lat, geo.lon], { icon }).bindPopup(popup).addTo(map);
-      markers.push(marker);
-      bounds.push([geo.lat, geo.lon]);
-      located++;
-
-      chipsHtml.push('<div class="chip" onclick="map.setView([' + geo.lat + ',' + geo.lon + '],8);markers[' + (markers.length-1) + '].openPopup();"><span class="chip-name" style="color:' + c + '">' + label + '</span><span class="chip-loc">' + (geo.city||'') + ', ' + (geo.country||'') + '</span></div>');
-    }
-
-    document.getElementById('chips').innerHTML = chipsHtml.join('');
-
-    if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
-
-    document.getElementById('statusText').textContent = located + ' location(s) plotted from ' + ips.length + ' unique IP(s)';
-    document.getElementById('statusTime').textContent = 'Updated: ' + new Date().toLocaleTimeString();
-
-  } catch(e) {
-    document.getElementById('statusText').textContent = 'Error loading data: ' + (e.message || e);
+  if (geo) {
+    geo.pingedAt = new Date().toLocaleTimeString();
+    cache[ip] = geo;
+    saveCache(cache);
+    plotMarker(ip, names, geo);
+    if (chip) chip.className = 'chip located';
+    if (btn) { btn.textContent = '🔄 Re-ping'; btn.classList.remove('loading'); btn.disabled = false; }
+    // Update location text
+    const locEl = chip?.querySelector('.chip-loc');
+    const pingEl = chip?.querySelector('.chip-ping');
+    if (locEl) locEl.textContent = `${geo.city||''}, ${geo.country||''}`;
+    if (pingEl) pingEl.textContent = `Last pinged: ${geo.pingedAt}`;
+    // Fly to location
+    map.flyTo([geo.lat, geo.lon], 8, { animate: true, duration: 1.2 });
+    markers[ip]?.openPopup();
+  } else {
+    cache[ip] = null; // mark as failed so we know we tried
+    saveCache(cache);
+    if (chip) chip.className = 'chip failed';
+    if (btn) { btn.textContent = '❌ Failed — retry'; btn.classList.remove('loading'); btn.disabled = false; }
   }
 
-  loading.style.display = 'none';
+  document.getElementById('statusTime').textContent = new Date().toLocaleTimeString();
 }
 
-// On load
+// ---- PLOT MARKER ----
+function plotMarker(ip, names, geo) {
+  // Remove existing marker for this IP if any
+  if (markers[ip]) { map.removeLayer(markers[ip]); delete markers[ip]; }
+
+  const label = names.join(' & ');
+  const c = col(names[0]);
+  const initials = names.map(n=>n[0]).slice(0,2).join('');
+
+  const icon = L.divIcon({
+    className: '',
+    html: '<div style="background:'+c+';color:#071a2b;font-weight:800;font-size:11px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.5);">'+initials+'</div>',
+    iconSize: [34,34], iconAnchor: [17,17], popupAnchor: [0,-20]
+  });
+
+  const popup = '<b style="font-size:14px;">'+label+'</b><br>'
+    +'<span style="font-size:11px;color:#555;">'+(geo.city||'')+', '+(geo.country||'')+'</span><br>'
+    +'<span style="font-size:10px;color:#888;">'+(geo.isp||'')+'</span><br>'
+    +'<span style="font-size:10px;color:#aaa;">'+ip+'</span><br>'
+    +'<span style="font-size:10px;color:#aaa;">Pinged: '+(geo.pingedAt||'')+'</span>';
+
+  markers[ip] = L.marker([geo.lat, geo.lon], { icon }).bindPopup(popup).addTo(map);
+}
+
+// ---- INIT ----
 window.addEventListener('DOMContentLoaded', () => {
   if (sessionStorage.getItem('mapOk') === '1') {
     document.getElementById('gate').style.display = 'none';
