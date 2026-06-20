@@ -274,10 +274,11 @@ async function loadLeaderboard(){
     const res = await fetch(ENDPOINT+"?type=leaderboard");
     const d = await res.json();
     if(d.status==="ok"){ render(d); return; }
-  }catch(e){}
+  }catch(e){ console.log('fetch failed:',e.message); }
   try{ await jsonpLoad(); }
   catch(e2){
-    document.getElementById("lbBody").innerHTML='<tr><td colspan="7" class="loading">Could not reach leaderboard.</td></tr>';
+    document.getElementById("lbBody").innerHTML='<tr><td colspan="7" style="padding:20px;text-align:center;color:#ff5e3a;">Could not reach leaderboard. Error: '+e2+'</td></tr>';
+    document.getElementById("status").textContent='Error - try refreshing';
   }
 }
 
