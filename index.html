@@ -49,6 +49,18 @@
   }
   .match{
     padding:12px 14px; border-top:1px solid var(--line);
+    border:2px solid transparent;
+    transition:border-left-color 0.3s;
+  }
+  .match.needs-attention{
+    border:2px solid transparent;
+    border-radius:10px;
+    animation:attention-pulse 2s ease-in-out infinite;
+    margin:4px 0;
+  }
+  @keyframes attention-pulse{
+    0%,100%{ border-color:rgba(245,197,24,0.15); box-shadow:0 0 0 0 rgba(245,197,24,0); }
+    50%{ border-color:rgba(245,197,24,0.9); box-shadow:0 0 8px 2px rgba(245,197,24,0.2); }
   }
   .match-row{
     display:flex; justify-content:space-between; align-items:center; cursor:pointer;
@@ -444,6 +456,7 @@
 // Actual results, fetched from the shared sheet on page load.
 // Keyed by numeric match id: {9: {home: 4, away: 0}, ...}
 let actualResults = {};
+let serverPredictions = {}; // what's actually confirmed in the sheet {matchId: {home, away}}
 
 // Compares a prediction to the actual result and returns a short verdict label
 function scoreVerdict(pred, actual){
@@ -671,12 +684,18 @@ async function restoreFromServer(name){
   }
   if(!picks || picks.length === 0) return;
 
+  // Store server predictions for mismatch detection
+  serverPredictions = {};
+  picks.forEach(p=>{
+    const num = parseInt((p.matchId||'').replace(/\D/g,''), 10);
+    if(!isNaN(num)) serverPredictions[num] = {home: p.predHome, away: p.predAway};
+  });
+
   let changed = false;
   picks.forEach(p=>{
     const num = parseInt((p.matchId||'').replace(/\D/g,''), 10);
     if(isNaN(num)) return;
     const existing = predictions[num];
-    // Only restore if local has nothing (cache cleared) or if match is locked (reconcile to truth)
     const m = matches.find(mm=>mm.id===num);
     const locked = m ? isLocked(m) : false;
     if(!existing || existing.home===undefined || locked){
@@ -686,8 +705,8 @@ async function restoreFromServer(name){
   });
   if(changed){
     await savePredictions();
-    render();
   }
+  render(); // always re-render so attention blinking updates
 }
 
 function fetchMyPicksRaw(name){
@@ -788,7 +807,21 @@ function render(){
       const stats = getStats(m);
 
       const matchDiv = document.createElement('div');
-      matchDiv.className = 'match';
+
+      // Check if this today's match needs attention (slow amber blink)
+      const todayStr = new Date().toISOString().slice(0,10);
+      const isToday = m.date === todayStr;
+      const p_local = predictions[m.id] || {};
+      const p_server = serverPredictions[m.id];
+      const hasLocalPred = p_local.home !== undefined && p_local.away !== undefined;
+      const hasMismatch = hasLocalPred && p_server &&
+        (p_local.home !== p_server.home || p_local.away !== p_server.away);
+      const needsAttention = isToday && !locked && (
+        !hasLocalPred ||           // no prediction entered
+        hasMismatch                 // local differs from sheet
+      );
+
+      matchDiv.className = 'match' + (needsAttention ? ' needs-attention' : '');
       matchDiv.innerHTML = `
         <div class="match-row" onclick="toggleDetail(${m.id})">
           <div>
@@ -1602,6 +1635,8 @@ async function confirmExport(){
 
   // Show verification popup
   showVerifyPopup(ms, name, onRecord);
+  // Update serverPredictions with what's confirmed so blinking clears immediately
+  Object.assign(serverPredictions, onRecord);
   render();
 }
 
