@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>SHC-1999-n FIFA 2026 — Leaderboard</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <style>
@@ -240,7 +240,7 @@
     </div>
   </div>
 
-  <div class="view-toggle-hint">double tap to switch group / individual view</div>
+  <div class="view-toggle-hint">⚡ fast swipe left/right to switch group / individual view</div>
   <div class="status" id="status"></div>
 </div>
 
@@ -430,20 +430,32 @@ function renderGroupView(groupTotals){
   }).join('');
 }
 
-// ---------- DOUBLE TAP TO TOGGLE VIEW ----------
+// ---------- FAST LONG HORIZONTAL SWIPE TO TOGGLE VIEW ----------
+// Requires: fast (<200ms), far (>160px horizontal), more horizontal than vertical (3:1 ratio)
+// This makes it very intentional — normal scrolling or slow swipes won't trigger it
 let isGroupView = true;
-let lastTapLB = 0;
+let swTouchX = 0, swTouchY = 0, swTouchTime = 0;
+
+document.addEventListener('touchstart', e=>{
+  swTouchX = e.touches[0].clientX;
+  swTouchY = e.touches[0].clientY;
+  swTouchTime = Date.now();
+}, { passive: true });
 
 document.addEventListener('touchend', e=>{
-  // Only trigger on the main content area, not buttons
   if(e.target.closest('button,a,.hdr-btn')) return;
-  const now = Date.now();
-  const gap = now - lastTapLB;
-  lastTapLB = now;
-  if(gap < 300 && gap > 30) toggleView();
-});
+  const dx = e.changedTouches[0].clientX - swTouchX;
+  const dy = Math.abs(e.changedTouches[0].clientY - swTouchY);
+  const dt = Date.now() - swTouchTime;
+  const adx = Math.abs(dx);
 
-// Also support double-click for desktop
+  // Must be: fast (<200ms), long (>160px), strongly horizontal (dx > 3x dy)
+  if(dt > 200 || adx < 160 || adx < dy * 3) return;
+
+  toggleView();
+}, { passive: true });
+
+// Double-click still works on desktop
 let lastClickLB = 0;
 document.addEventListener('click', e=>{
   if(e.target.closest('button,a,.hdr-btn')) return;
@@ -460,8 +472,8 @@ function toggleView(){
   document.getElementById('indView').classList.toggle('hidden', isGroupView);
   document.getElementById('indView').classList.toggle('active', !isGroupView);
   document.querySelector('.view-toggle-hint').textContent = isGroupView
-    ? 'double tap · individual view'
-    : 'double tap · group view';
+    ? '⚡ fast swipe left/right · individual view'
+    : '⚡ fast swipe left/right · group view';
 }
 // Requires: fast swipe (< 250ms) + large distance (120px+) + starts within table zone
 let tsY=0, tsX=0, tsTime=0, isFlipped=false, isAnimating=false;
