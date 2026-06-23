@@ -69,7 +69,48 @@
   /* negative points */
   .pts-neg{ color:#dc2626!important; }
 
-  /* ---------- FLIP ANIMATION ---------- */
+  /* ---------- GROUP VIEW ---------- */
+  .view-toggle-hint{
+    text-align:center; font-size:11px; color:#64748b; margin-top:6px;
+    animation:hint-pulse 2.5s ease-in-out infinite;
+  }
+  .group-view{ display:none; }
+  .group-view.active{ display:block; }
+  .ind-view.hidden{ display:none; }
+  .group-cards{ display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+  .group-card{
+    border-radius:14px; padding:14px 16px; border:2px solid transparent;
+    box-shadow:0 4px 16px rgba(0,0,0,0.2);
+  }
+  .gc-josephites{ background:rgba(245,197,24,0.12); border-color:rgba(245,197,24,0.4); }
+  .gc-marians{    background:rgba(14,165,233,0.12); border-color:rgba(14,165,233,0.4); }
+  .gc-florians{   background:rgba(244,114,182,0.12); border-color:rgba(244,114,182,0.4); }
+  .gc-therasians{ background:rgba(34,197,94,0.12);  border-color:rgba(34,197,94,0.4); }
+  .gc-ungrouped{  background:rgba(100,116,139,0.12); border-color:rgba(100,116,139,0.4); }
+  .gc-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .gc-name{ font-size:16px; font-weight:900; }
+  .gc-josephites .gc-name{ color:#f5c518; }
+  .gc-marians    .gc-name{ color:#0ea5e9; }
+  .gc-florians   .gc-name{ color:#f472b6; }
+  .gc-therasians .gc-name{ color:#22c55e; }
+  .gc-ungrouped  .gc-name{ color:#94a3b8; }
+  .gc-pts{ font-size:26px; font-weight:900; color:#f2f7fb; }
+  .gc-stats{ display:flex; gap:12px; }
+  .gc-stat{ text-align:center; }
+  .gc-stat-val{ font-size:18px; font-weight:800; color:#f2f7fb; display:block; }
+  .gc-stat-lbl{ font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:#64748b; }
+  /* Group standings mini table */
+  .group-standings{ margin-top:10px; }
+  .gs-title{ font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  .gs-row{ display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:8px; margin-bottom:4px; }
+  .gs-row:nth-child(1){ background:rgba(245,197,24,0.08); }
+  .gs-row:nth-child(2){ background:rgba(14,165,233,0.08); }
+  .gs-row:nth-child(3){ background:rgba(244,114,182,0.08); }
+  .gs-row:nth-child(4){ background:rgba(34,197,94,0.08); }
+  .gs-rank{ font-size:14px; width:24px; text-align:center; }
+  .gs-name{ flex:1; font-size:13px; font-weight:700; }
+  .gs-pts{ font-size:13px; font-weight:800; color:#f2f7fb; }
+  .gs-bar{ height:4px; border-radius:2px; margin-top:4px; }
   @keyframes row-scramble{
     0%  { transform:translateY(0) scaleY(1); opacity:1; }
     25% { transform:translateY(-8px) scaleY(0.85); opacity:0.6; }
@@ -161,32 +202,45 @@
 
   <div class="tidbits" id="tidbitsBox"></div>
 
-  <div class="lb-wrap">
-    <table class="lb-table">
-      <thead>
-        <tr>
-          <th style="width:36px; background:#64748b; color:#fff;">#</th>
-          <th class="name" style="background:#64748b; color:#fff;">Name</th>
-          <th style="background:#0ea5e9; color:#fff;">Exact</th>
-          <th style="background:#f472b6; color:#fff;">Correct</th>
-          <th style="background:#22c55e; color:#fff;">Wrong</th>
-          <th style="background:#f5c518; color:#1a1200;">Listed</th>
-          <th style="background:#64748b; color:#fff;">Points</th>
-        </tr>
-      </thead>
-      <tbody id="lbBody">
-        <tr><td colspan="7" class="loading">Loading crew list...</td></tr>
-      </tbody>
-    </table>
+  <!-- GROUP VIEW (default) -->
+  <div class="group-view active" id="groupView">
+    <div class="group-cards" id="groupCards">
+      <div class="loading">Loading group standings...</div>
+    </div>
+    <div class="group-standings">
+      <div class="gs-title">Group Standings</div>
+      <div id="groupStandings"></div>
+    </div>
   </div>
 
-  <div class="flip-hint" id="flipHint">↑ swipe up to flip · ↓ swipe down to restore</div>
-
-  <div class="legend">
-    <b style="color:#333;">Points:</b> Exact score +5 &middot; Correct result +2 &middot; Wrong -1 &middot; No prediction 0<br>
-    <b style="color:#333;">Listed</b> = open predictions on record &middot; &#8593;&#8595; = movement since last refresh
+  <!-- INDIVIDUAL VIEW (double tap to switch) -->
+  <div class="ind-view hidden" id="indView">
+    <div class="lb-wrap">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th style="width:36px; background:#64748b; color:#fff;">#</th>
+            <th class="name" style="background:#64748b; color:#fff;">Name</th>
+            <th style="background:#0ea5e9; color:#fff;">Exact</th>
+            <th style="background:#f472b6; color:#fff;">Correct</th>
+            <th style="background:#22c55e; color:#fff;">Wrong</th>
+            <th style="background:#f5c518; color:#1a1200;">Listed</th>
+            <th style="background:#64748b; color:#fff;">Points</th>
+          </tr>
+        </thead>
+        <tbody id="lbBody">
+          <tr><td colspan="7" class="loading">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flip-hint" id="flipHint">↑ swipe up to flip · ↓ swipe down to restore</div>
+    <div class="legend">
+      <b style="color:#a9c4dc;">Points:</b> Exact +5 &middot; Correct +2 &middot; Wrong -1 &middot; No prediction 0<br>
+      <b style="color:#a9c4dc;">Listed</b> = open predictions on record &middot; &#8593;&#8595; = movement since last refresh
+    </div>
   </div>
 
+  <div class="view-toggle-hint">double tap to switch group / individual view</div>
   <div class="status" id="status"></div>
 </div>
 
@@ -242,6 +296,7 @@ function render(data){
   try{ renderHeader(data.lastResult); }catch(e){}
   try{ renderTidbits(data.tidbits); }catch(e){}
   try{ renderTable(data.leaderboard); }catch(e){ console.error('renderTable error:',e); }
+  try{ renderGroupView(data.groupTotals); }catch(e){ console.error('renderGroupView error:',e); }
   document.getElementById("status").textContent="Last updated: "+new Date().toLocaleTimeString();
   try{ checkPodiumReveal(data.leaderboard); }catch(e){}
 }
@@ -314,7 +369,98 @@ function showStep(step,rows,card){
 }
 
 
-// ---------- SWIPE TO FLIP (row reorder) ----------
+// ---------- GROUP VIEW ----------
+const GROUP_STYLES = {
+  'Josephites': { cls: 'gc-josephites', color: '#f5c518', emoji: '🟡' },
+  'Marians':    { cls: 'gc-marians',    color: '#0ea5e9', emoji: '🔵' },
+  'Florians':   { cls: 'gc-florians',   color: '#f472b6', emoji: '🌸' },
+  'Therasians': { cls: 'gc-therasians', color: '#22c55e', emoji: '🟢' },
+};
+function groupStyle(name){ return GROUP_STYLES[name] || { cls:'gc-ungrouped', color:'#94a3b8', emoji:'⚪' }; }
+
+function renderGroupView(groupTotals){
+  const cards = document.getElementById('groupCards');
+  const standings = document.getElementById('groupStandings');
+  if(!groupTotals || groupTotals.length === 0){
+    cards.innerHTML = '<div class="loading">No group data yet — add Group column to Leaderboard sheet.</div>';
+    return;
+  }
+
+  // Group cards
+  cards.innerHTML = groupTotals.map((g, i)=>{
+    const s = groupStyle(g.group);
+    const medals = ['🥇','🥈','🥉','4️⃣'];
+    return `<div class="group-card ${s.cls}">
+      <div class="gc-header">
+        <div>
+          <div class="gc-name">${s.emoji} ${g.group}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:2px;">${g.members} member${g.members!==1?'s':''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#64748b;">Total Points</div>
+          <div class="gc-pts">${g.points}</div>
+        </div>
+      </div>
+      <div class="gc-stats">
+        <div class="gc-stat"><span class="gc-stat-val" style="color:#0ea5e9;">${g.exact}</span><span class="gc-stat-lbl">Exact</span></div>
+        <div class="gc-stat"><span class="gc-stat-val" style="color:#f472b6;">${g.correct}</span><span class="gc-stat-lbl">Correct</span></div>
+        <div class="gc-stat"><span class="gc-stat-val" style="color:#ff5e3a;">${g.wrong}</span><span class="gc-stat-lbl">Wrong</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Mini standings table
+  const maxPts = groupTotals[0] ? groupTotals[0].points : 1;
+  standings.innerHTML = groupTotals.map((g, i)=>{
+    const s = groupStyle(g.group);
+    const medals = ['🥇','🥈','🥉','4️⃣'];
+    const barW = Math.round((g.points / Math.max(maxPts,1)) * 100);
+    return `<div class="gs-row">
+      <div class="gs-rank">${medals[i]||i+1}</div>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="gs-name" style="color:${s.color}">${g.group}</span>
+          <span class="gs-pts">${g.points} pts</span>
+        </div>
+        <div class="gs-bar" style="width:${barW}%;background:${s.color};opacity:0.6;"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- DOUBLE TAP TO TOGGLE VIEW ----------
+let isGroupView = true;
+let lastTapLB = 0;
+
+document.addEventListener('touchend', e=>{
+  // Only trigger on the main content area, not buttons
+  if(e.target.closest('button,a,.hdr-btn')) return;
+  const now = Date.now();
+  const gap = now - lastTapLB;
+  lastTapLB = now;
+  if(gap < 300 && gap > 30) toggleView();
+});
+
+// Also support double-click for desktop
+let lastClickLB = 0;
+document.addEventListener('click', e=>{
+  if(e.target.closest('button,a,.hdr-btn')) return;
+  const now = Date.now();
+  const gap = now - lastClickLB;
+  lastClickLB = now;
+  if(gap < 400 && gap > 30) toggleView();
+});
+
+function toggleView(){
+  isGroupView = !isGroupView;
+  document.getElementById('groupView').classList.toggle('active', isGroupView);
+  document.getElementById('groupView').classList.toggle('hidden', !isGroupView);
+  document.getElementById('indView').classList.toggle('hidden', isGroupView);
+  document.getElementById('indView').classList.toggle('active', !isGroupView);
+  document.querySelector('.view-toggle-hint').textContent = isGroupView
+    ? 'double tap · individual view'
+    : 'double tap · group view';
+}
 // Requires: fast swipe (< 250ms) + large distance (120px+) + starts within table zone
 let tsY=0, tsX=0, tsTime=0, isFlipped=false, isAnimating=false;
 let lbData = []; // stores current leaderboard data for re-render
