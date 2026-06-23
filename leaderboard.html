@@ -85,14 +85,14 @@
   .gc-josephites{ background:rgba(245,197,24,0.12); border-color:rgba(245,197,24,0.4); }
   .gc-marians{    background:rgba(14,165,233,0.12); border-color:rgba(14,165,233,0.4); }
   .gc-florians{   background:rgba(244,114,182,0.12); border-color:rgba(244,114,182,0.4); }
-  .gc-therasians{ background:rgba(34,197,94,0.12);  border-color:rgba(34,197,94,0.4); }
+  .gc-therasians{ background:rgba(34,197,94,0.12); border-color:rgba(34,197,94,0.5); }
   .gc-ungrouped{  background:rgba(100,116,139,0.12); border-color:rgba(100,116,139,0.4); }
   .gc-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .gc-name{ font-size:16px; font-weight:900; }
   .gc-josephites .gc-name{ color:#f5c518; }
   .gc-marians    .gc-name{ color:#0ea5e9; }
   .gc-florians   .gc-name{ color:#f472b6; }
-  .gc-therasians .gc-name{ color:#22c55e; }
+  .gc-therasians .gc-name{ color:#22c55e; font-weight:900; }
   .gc-ungrouped  .gc-name{ color:#94a3b8; }
   .gc-pts{ font-size:26px; font-weight:900; color:#f2f7fb; }
   .gc-stats{ display:flex; gap:12px; }
@@ -371,10 +371,12 @@ function showStep(step,rows,card){
 
 // ---------- GROUP VIEW ----------
 const GROUP_STYLES = {
-  'Josephites': { cls: 'gc-josephites', color: '#f5c518', emoji: '🟡' },
-  'Marians':    { cls: 'gc-marians',    color: '#0ea5e9', emoji: '🔵' },
-  'Florians':   { cls: 'gc-florians',   color: '#f472b6', emoji: '🌸' },
-  'Therasians': { cls: 'gc-therasians', color: '#22c55e', emoji: '🟢' },
+  'Josephites': { cls: 'gc-josephites', color: '#f5c518', emoji: '🌟⚡' },
+  'Marians':    { cls: 'gc-marians',    color: '#0ea5e9', emoji: '🌊🔵' },
+  'Florians':   { cls: 'gc-florians',   color: '#f472b6', emoji: '🌸🌺' },
+  'Terasians':  { cls: 'gc-therasians', color: '#22c55e', emoji: '🌿🟢' },
+  'Therasians': { cls: 'gc-therasians', color: '#22c55e', emoji: '🌿🟢' },
+  'Teresians':  { cls: 'gc-therasians', color: '#22c55e', emoji: '🌿🟢' },
 };
 function groupStyle(name){ return GROUP_STYLES[name] || { cls:'gc-ungrouped', color:'#94a3b8', emoji:'⚪' }; }
 
@@ -398,7 +400,7 @@ function renderGroupView(groupTotals){
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px;color:#64748b;">Total Points</div>
-          <div class="gc-pts">${g.points}</div>
+          <div class="gc-pts" style="color:#94a3b8;">${g.points}</div>
         </div>
       </div>
       <div class="gc-stats">
